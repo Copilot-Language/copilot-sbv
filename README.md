@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Copilot-Language/copilot-sbv.svg?branch=master)](https://travis-ci.org/Copilot-Language/copilot-sbv)
+
 Overview
 ========
 [copilot-sbv](http://hackage.haskell.org/package/copilot-sbv) Another back-end
