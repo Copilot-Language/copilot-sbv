@@ -202,7 +202,7 @@ noFloatOpsErr op =
 
 c2sOp1 :: C.Op1 a b -> S.SBV a -> S.SBV b
 c2sOp1 op = case op of
-  Not     -> \x -> S.ite (x S..== S.false) S.true S.false
+  Not     -> (S.bnot)
   Abs   t -> case W.symWordInst t of 
                        W.SymWordInst         -> abs 
   Sign  t -> case W.symWordInst t of 
@@ -234,12 +234,8 @@ c2sOp1 op = case op of
 
 c2sOp2 :: C.Op2 a b c -> S.SBV a -> S.SBV b -> S.SBV c
 c2sOp2 op = case op of
-  And     -> \x y -> S.ite (x S..== S.false) 
-                                   S.false 
-                                   (S.ite (y S..== S.false) S.false S.true)
-  Or      -> \x y -> S.ite (x S..== S.false) 
-                                   (S.ite (y S..== S.false) S.false S.true)
-                                   S.true
+  And     -> (S.&&&)
+  Or      -> (S.|||)
   Add   t -> case W.symWordInst  t of W.SymWordInst    ->  (+)
   Sub   t -> case W.symWordInst  t of W.SymWordInst    ->  (-)
   Mul   t -> case W.symWordInst  t of W.SymWordInst    ->  (*)
