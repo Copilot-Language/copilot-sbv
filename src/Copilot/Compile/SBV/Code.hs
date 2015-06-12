@@ -7,10 +7,10 @@
 
 module Copilot.Compile.SBV.Code
   ( updateStates
-  , updateObservers
-  , fireTriggers
-  , getExtArrs
-  , getExtFuns
+--  , updateObservers
+--  , fireTriggers
+ -- , getExtArrs
+--  , getExtFuns
   ) where
 
 import Copilot.Compile.SBV.Copilot2SBV
@@ -29,10 +29,10 @@ import Prelude hiding (id)
 
 --------------------------------------------------------------------------------
 
-type SBVFunc  = (String, S.SBVCodeGen ())
+type SBVFunc  = (String, S.SBVCodeGen (), String)
 
-mkSBVFunc :: String -> S.SBVCodeGen () -> (String, S.SBVCodeGen ())
-mkSBVFunc str codeGen = (str, codeGen)
+mkSBVFunc :: String -> String -> S.SBVCodeGen () -> (String, S.SBVCodeGen (), String)
+mkSBVFunc str cc codeGen = (str, codeGen, cc)
 
 --------------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ updateStates meta (C.Spec streams _ _ _) =
                              , C.streamExpr     = e
                              , C.streamExprType = t1
                                                       } 
-    = mkSBVFunc (mkUpdateStFn id) $ do
+    = mkSBVFunc (mkUpdateStFn id) "/*test 001*/" $ do
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta) 
@@ -61,7 +61,7 @@ updateStates meta (C.Spec streams _ _ _) =
     S.cgReturn $ coerce (cong p) e1
 
 --------------------------------------------------------------------------------
-
+{-
 updateObservers :: MetaTable -> C.Spec -> [SBVFunc]
 updateObservers meta (C.Spec _ observers _ _) =
   map updateObs observers
@@ -159,7 +159,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
     go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
 
 --------------------------------------------------------------------------------
-
+-}
 -- mkInputs takes the datatype containing the entire spec (meta) as well as all
 -- possible arguments to the SBV function generating the expression.  From those
 -- arguments, it then generates in the SBVCodeGen monad---the actual Inputs---
@@ -263,3 +263,4 @@ mkExtInput_ t name = do
   W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
   ext <- S.cgInput name
   return ext
+

@@ -17,7 +17,8 @@ import qualified Data.SBV as S
 import Copilot.Compile.SBV.Driver (driver, driverName)
 import Copilot.Compile.SBV.Makefile (makefile, makefileName)
 import Copilot.Compile.SBV.Code 
-  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
+--  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
+  (updateStates)
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
 
@@ -34,7 +35,7 @@ compile :: Params -> C.Spec -> IO ()
 compile p s = compileWithSBV p [] s
 
 -- | sbvs are optional additional SBVCodeGens to generate.
-compileWithSBV :: Params -> [(String, S.SBVCodeGen ())] -> C.Spec -> IO ()
+compileWithSBV :: Params -> [(String, S.SBVCodeGen (), String)] -> C.Spec -> IO ()
 compileWithSBV params sbvs spec0 = do
   let meta    = allocMetaTable spec
       dirName = withPrefix (prefix params) sbvDirName
@@ -45,11 +46,11 @@ compileWithSBV params sbvs spec0 = do
     (Just dirName)
     sbvName $ omitSBVDriver
     (  updateStates    meta spec
-    ++ updateObservers meta spec
+{-    ++ updateObservers meta spec
     ++ fireTriggers    meta spec 
     ++ getExtArrs      meta 
     ++ getExtFuns      meta 
-    ++ sbvs
+    ++ sbvs-}
     )
 
   putStrLn ""
@@ -93,9 +94,9 @@ readme =
 
 --------------------------------------------------------------------------------
 
-omitSBVDriver :: [(a, S.SBVCodeGen ())] -> [(a, S.SBVCodeGen ())]
+omitSBVDriver :: [(a, S.SBVCodeGen (), String)] -> [(a, S.SBVCodeGen (), String)]
 omitSBVDriver = map omit 
   where
-  omit (a, cg) = (a, S.cgGenerateDriver False >> cg)
+  omit (a, cg, cc) = (a, S.cgGenerateDriver False >> cg, cc)
 
 --------------------------------------------------------------------------------
