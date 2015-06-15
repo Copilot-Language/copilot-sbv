@@ -7,10 +7,10 @@
 
 module Copilot.Compile.SBV.Code
   ( updateStates
---  , updateObservers
---  , fireTriggers
- -- , getExtArrs
---  , getExtFuns
+  , updateObservers
+  , fireTriggers
+  , getExtArrs
+  , getExtFuns
   ) where
 
 import Copilot.Compile.SBV.Copilot2SBV
@@ -61,7 +61,7 @@ updateStates meta (C.Spec streams _ _ _) =
     S.cgReturn $ coerce (cong p) e1
 
 --------------------------------------------------------------------------------
-{-
+
 updateObservers :: MetaTable -> C.Spec -> [SBVFunc]
 updateObservers meta (C.Spec _ observers _ _) =
   map updateObs observers
@@ -71,7 +71,7 @@ updateObservers meta (C.Spec _ observers _ _) =
   updateObs C.Observer { C.observerName     = name
                        , C.observerExpr     = e
                        , C.observerExprType = t } =
-    mkSBVFunc (mkObserverFn name) mkSBVExp
+    mkSBVFunc (mkObserverFn name) "/*test 005*/" mkSBVExp
 
     where
     mkSBVExp =
@@ -93,7 +93,7 @@ fireTriggers meta (C.Spec _ _ triggers _) =
   fireTrig C.Trigger { C.triggerName  = name
                      , C.triggerGuard = guard
                      , C.triggerArgs  = args } =
-      mkSBVFunc (mkTriggerGuardFn name) mkSBVExp
+      mkSBVFunc (mkTriggerGuardFn name) "/*test 006*/" mkSBVExp
     : map go (mkArgIdx args)
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
@@ -108,7 +108,7 @@ mkArgCall :: MetaTable -> String -> C.UExpr -> SBVFunc
 mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
                             , C.uExprType = t } 
   =
-  mkSBVFunc fnCallName mkExpr
+  mkSBVFunc fnCallName "/*test 003*/" mkExpr
   where
   mkExpr = do
     inputs <- mkInputs meta (c2Args e)
@@ -131,7 +131,7 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
                        , C.externArrayIdx     = idx
                        , C.externArrayIdxType = t    })
     = 
-    mkSBVFunc (mkExtArrFn name) mkSBVExpr
+    mkSBVFunc (mkExtArrFn name) "/*test 002 */" mkSBVExpr
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
@@ -159,7 +159,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
     go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
 
 --------------------------------------------------------------------------------
--}
+
 -- mkInputs takes the datatype containing the entire spec (meta) as well as all
 -- possible arguments to the SBV function generating the expression.  From those
 -- arguments, it then generates in the SBVCodeGen monad---the actual Inputs---

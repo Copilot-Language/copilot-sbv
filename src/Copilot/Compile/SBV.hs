@@ -17,8 +17,7 @@ import qualified Data.SBV as S
 import Copilot.Compile.SBV.Driver (driver, driverName)
 import Copilot.Compile.SBV.Makefile (makefile, makefileName)
 import Copilot.Compile.SBV.Code 
---  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
-  (updateStates)
+  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
 
@@ -46,11 +45,11 @@ compileWithSBV params sbvs spec0 = do
     (Just dirName)
     sbvName $ omitSBVDriver
     (  updateStates    meta spec
-{-    ++ updateObservers meta spec
+    ++ updateObservers meta spec
     ++ fireTriggers    meta spec 
     ++ getExtArrs      meta 
     ++ getExtFuns      meta 
-    ++ sbvs-}
+    ++ sbvs
     )
 
   putStrLn ""
