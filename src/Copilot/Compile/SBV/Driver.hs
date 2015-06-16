@@ -16,9 +16,8 @@ module Copilot.Compile.SBV.Driver
 
 import Prelude hiding (id)
 import qualified Data.Map as M
-import Data.List (intersperse)
+import Data.List (intersperse, concat)
 import qualified System.IO as I
-import Text.PrettyPrint.HughesPJ
 
 import Copilot.Compile.SBV.MetaTable
 import Copilot.Compile.SBV.Queue (QueueSize)
@@ -34,21 +33,23 @@ import Copilot.Compile.Header.C99 (c99HeaderName)
 driverName :: Params -> String
 driverName params = withPrefix (prefix params) "driver" ++ ".c"
 
+punctuateS :: String -> [String] -> [String]
+punctuateS p l = map (\x -> (x ++ p)) l
+
 --------------------------------------------------------------------------------
 
 -- | Define a C function.
-mkFunc :: String -> Doc -> Doc
+mkFunc :: String -> String -> String
 mkFunc fnName doc =
-     text "void" <+> text fnName
-       <> lparen <> text "void" <> rparen <+> lbrace
-  $$ nest 2 doc $$ nest 0 rbrace
+     "void " ++ fnName ++ "(" ++ "void" ++ ")\n{\n"
+  ++ doc ++ "\n}"
 
-mkArgs :: [Doc] -> Doc
-mkArgs args = hsep (punctuate comma args)
+mkArgs :: [String] -> String
+mkArgs args = concat (punctuateS "," args)
 
 -- | Call a C function.
-mkFuncCall :: String -> [Doc] -> Doc
-mkFuncCall f args = text f <> lparen <> mkArgs args <> rparen
+mkFuncCall :: String -> [String] -> String
+mkFuncCall f args = f ++ "(" ++ (mkArgs args) ++ ")"
 
 --------------------------------------------------------------------------------
 
@@ -56,52 +57,50 @@ driver :: Params -> MetaTable -> C.Spec -> String -> String -> IO ()
 driver params meta (C.Spec streams observers _ _) dir fileName = do
   let filePath = dir ++ '/' : driverName params
   h <- I.openFile filePath I.WriteMode
-  let wr doc = I.hPutStrLn h (mkStyle doc)
+  let ws strin = I.putStrLn (strin)
 
-  wr (    text "/*"
-      <+> text "Driver for SBV program generated from Copilot."
-      <+> text "*/")
-  wr (text "/*" <+> text "Edit as you see fit" <+> text "*/")
-  wr (text "")
+  ws (    "/*\n"
+      ++ "Driver for SBV program generated from Copilot.\n"
+      ++ "*/")
+  ws ("/*" ++ "Edit as you see fit" ++ "*/")
+  ws ("\n")
 
-  wr (text "#include <inttypes.h>")
-  wr (text "#include <stdbool.h>")
-  wr (text "#include <stdint.h>")
-  wr (text "#include <stdio.h>")
-  wr (text "#include" <+> doubleQuotes (text fileName <> text ".h"))
-  wr (text "#include" <+> doubleQuotes (text $ c99HeaderName (prefix params)))
-  wr (text "")
+  ws ("#include <inttypes.h>")
+  ws ("#include <stdbool.h>")
+  ws ("#include <stdint.h>")
+  ws ("#include <stdio.h>")
+  ws ("#include" ++ "\"" ++ (fileName ++ ".h") ++ "\"")
+  ws ("#include" ++ "\"" ++ (c99HeaderName (prefix params)) ++ "\"")
+  ws ("")
 
-  wr (text "/* Observers */")
-  wr (declObservers (prefix params) observers)
-  wr (text "")
+  ws ("/* Observers */")
+  ws (declObservers (prefix params) observers)
+  ws ("")
 
-  wr (text "/* Variables */")
+  ws ("/* Variables */")
 
-  wr (varDecls meta)
-  wr (writeACSLqueues meta)
-  wr (text "")
+  ws (varDecls meta)
+  ws (writeACSLqueues meta)
+  ws ("")
 
-  wr copilot
-  wr (text "")
-  wr driverFn
+  ws copilot
+  ws ("")
+  ws driverFn
 
   where
-  mkStyle :: Doc -> String
-  mkStyle = renderStyle (style {lineLength = 80})
-
-  driverFn :: Doc
+  
+  driverFn :: String
   driverFn =
     mkFunc (withPrefix (prefix params) "step")
-           (   mkFuncCall sampleExtsF    [] <> semi
-            $$ mkFuncCall triggersF      [] <> semi
-            $$ mkFuncCall observersF     [] <> semi
-            $$ mkFuncCall updateStatesF  [] <> semi
-            $$ mkFuncCall updateBuffersF [] <> semi
-            $$ mkFuncCall updatePtrsF    [] <> semi
+           (   mkFuncCall sampleExtsF    [] ++ ";\n"
+            ++ mkFuncCall triggersF      [] ++ ";\n"
+            ++ mkFuncCall observersF     [] ++ ";\n"
+            ++ mkFuncCall updateStatesF  [] ++ ";\n"
+            ++ mkFuncCall updateBuffersF [] ++ ";\n"
+            ++ mkFuncCall updatePtrsF    [] ++ ";\n"
            )
 
-  copilot = vcat $ intersperse (text "")
+  copilot = concat $ intersperse ("\n")
     [ sampleExts meta
     , fireTriggers meta
     , updateObservers params meta
@@ -114,12 +113,12 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
 
 -- Declare global variables.
 
-data Decl = Decl { retT    :: Doc
-                 , declVar :: Doc
-                 , initVal :: Doc }
+data Decl = Decl { retT    :: String
+                 , declVar :: String
+                 , initVal :: String }
 
-varDecls :: MetaTable -> Doc
-varDecls meta = vcat $ map varDecl (getVars meta)
+varDecls :: MetaTable -> String
+varDecls meta = concat $ intersperse ("\n") (map varDecl (getVars meta))
 
   where
   getVars :: MetaTable -> [Decl] 
@@ -140,10 +139,10 @@ varDecls meta = vcat $ map varDecl (getVars meta)
   getTmpStVars :: (C.Id, C.Stream) -> Decl
   getTmpStVars (id, C.Stream { C.streamExprType  = t
                                , C.streamBuffer = que }) = 
-    Decl (retType t) (text $ mkTmpStVar id) getFirst
+    Decl (retType t) (mkTmpStVar id) getFirst
     where 
     -- ASSUME queue is nonempty!
-    getFirst = text (cShow $ C.showWithType C.Haskell t (headErr que))
+    getFirst = (cShow $ C.showWithType C.Haskell t (headErr que))
     headErr [] = C.impossible "headErr" "copilot-sbv"
     headErr xs = head xs
   
@@ -151,43 +150,43 @@ varDecls meta = vcat $ map varDecl (getVars meta)
   getQueueVars (id, C.Stream { C.streamExprType = t
                              , C.streamBuffer = que }) =
     Decl (retType t) 
-         (text (mkQueueVar id) <> lbrack <> int (length que) <> rbrack)
+         ((mkQueueVar id) ++ "[" ++ (show (length que)) ++ "]")
          getInits
     where 
-    getInits = lbrace <+> vals <+> rbrace
+    getInits = "{" ++ vals ++ "}"
       where 
-      vals = hcat $ punctuate (comma <> text " ") 
-                              (map (text . cShow . C.showWithType C.Haskell t) 
+      vals = concat $ punctuateS (",\n") 
+                              (map (cShow . C.showWithType C.Haskell t) 
                                    que)
 
   getQueuePtrVars :: C.Id -> Decl
   getQueuePtrVars id = 
-    Decl (retType queSize) (text $ mkQueuePtrVar id) (int 0)
+    Decl (retType queSize) (mkQueuePtrVar id) (show 0)
     where 
     queSize :: C.Type QueueSize
     queSize = C.typeOf 
 
   getExtVars :: (C.Name, C.ExtVar) -> Decl
   getExtVars (var, C.ExtVar _ (C.UType { C.uTypeType = t })) = 
-    Decl (retType t) (text $ mkExtTmpVar var) (int 0)
+    Decl (retType t) (mkExtTmpVar var) (show 0)
 
   getExtArrs :: (Int, C.ExtArray) -> Decl 
   getExtArrs (_, C.ExtArray { C.externArrayName     = name
                             , C.externArrayElemType = t 
                             , C.externArrayTag      = tag  })
     =
-    Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
+    Decl (retType t) (mkExtTmpTag name tag) (show 0)
 
   getExtFuns :: (Int, C.ExtFun) -> Decl
   getExtFuns (_, C.ExtFun { C.externFunName = name
                           , C.externFunType = t
                           , C.externFunTag  = tag  })
     =
-    Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
+    Decl (retType t) (mkExtTmpTag name tag) (show 0)
 
-  varDecl :: Decl -> Doc
+  varDecl :: Decl -> String
   varDecl Decl { retT = t, declVar = v, initVal = i } =
-    t <+> v <+> equals <+> i <> semi
+    t ++ " " ++ v ++ " = " ++ i ++ ";"
 
   cShow :: String -> String
   cShow "True"  = show (1::Int)
@@ -196,20 +195,20 @@ varDecls meta = vcat $ map varDecl (getVars meta)
 
 --------------------------------------------------------------------------------
 
-declObservers :: Maybe String -> [C.Observer] -> Doc
-declObservers prfx = vcat . map declObserver
+declObservers :: Maybe String -> [C.Observer] -> String
+declObservers prfx ll = concat $ intersperse ("\n") (map declObserver ll)
 
   where
-  declObserver :: C.Observer -> Doc
+  declObserver :: C.Observer -> String
   declObserver
     C.Observer
       { C.observerName     = name
       , C.observerExprType = t } =
-    retType t <+> text (withPrefix prfx name) <> semi
+    retType t ++ (withPrefix prfx name) ++ ";"
 
 --------------------------------------------------------------------------------
 
-sampleExts :: MetaTable -> Doc
+sampleExts :: MetaTable -> String
 sampleExts MetaTable { externVarInfoMap = extVMap
                      , externArrInfoMap = extAMap
                      , externFunInfoMap = extFMap } 
@@ -218,10 +217,10 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc sampleExtsF $ vcat (extVars ++ extArrs ++ extFuns))
+  extACSL ++ "\n" ++ (mkFunc sampleExtsF $ concat $ intersperse ("\n") (extVars ++ extArrs ++ extFuns))
 
   where
-  extACSL = vcat [text  "/*@",vcat $ sampleVExtACSL extVMap, vcat $ sampleAExtACSL extAMap, vcat $ sampleFExtACSL extFMap ,text "*/"]
+  extACSL = concat $ intersperse ("\n") ["/*@",concat $ intersperse ("\n") (sampleVExtACSL extVMap), concat $ intersperse ("\n") (sampleAExtACSL extAMap), concat $ intersperse ("\n") (sampleFExtACSL extFMap) ,"*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
   extArrs = map sampleAExt (M.toList extAMap)
   extFuns = map sampleFExt (M.toList extFMap)
@@ -230,19 +229,19 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 
 -- Variables
 
-sampleVExtACSL :: M.Map C.Name C.ExtVar -> [Doc]
+sampleVExtACSL :: M.Map C.Name C.ExtVar -> [String]
 sampleVExtACSL extVMap = 
   (map sampleVExtACSL1 ((fst . unzip . M.toList) extVMap)) ++ (map sampleVExtACSL2 ((fst . unzip . M.toList) extVMap))
-sampleVExtACSL1 :: C.Name -> Doc
+sampleVExtACSL1 :: C.Name -> String
 sampleVExtACSL1 name = 
-  text "assigns" <+> text (mkExtTmpVar name) <> semi
-sampleVExtACSL2 :: C.Name -> Doc
+  "assigns " ++ (mkExtTmpVar name) ++ ";"
+sampleVExtACSL2 :: C.Name -> String
 sampleVExtACSL2 name = 
-  text "//ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
+  "//ensures " ++ (mkExtTmpVar name) ++ " == " ++ name ++ ";"
 
-sampleVExt :: C.Name -> Doc
+sampleVExt :: C.Name -> String
 sampleVExt name = 
-  text (mkExtTmpVar name) <+> equals <+> text name <> semi
+  (mkExtTmpVar name) ++ " = " ++ name ++ ";"
 
 --------------------------------------------------------------------------------
 -- Arrays
@@ -250,222 +249,214 @@ sampleVExt name =
 -- Currenty, Analyze.hs in copilot-language forbids recurssion in external
 -- arrays or functions (i.e., an external array can't use another external array
 -- to compute it's index).
-sampleAExtACSL :: M.Map C.Tag C.ExtArray -> [Doc]
+sampleAExtACSL :: M.Map C.Tag C.ExtArray -> [String]
 sampleAExtACSL extAMap = 
   (map sampleAExtACSL1 (M.toList extAMap)) ++ (map sampleAExtACSL2 (M.toList extAMap))
 
-sampleAExtACSL1 :: (Int, C.ExtArray) -> Doc
+sampleAExtACSL1 :: (Int, C.ExtArray) -> String
 sampleAExtACSL1 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
                           , C.externArrayTag = t     })
   = 
-  text "assigns" <+> text (mkExtTmpTag name t) <+> semi
+  "assigns " ++ (mkExtTmpTag name t) ++ ";"
 
 
-sampleAExtACSL2 :: (Int, C.ExtArray) -> Doc
+sampleAExtACSL2 :: (Int, C.ExtArray) -> String
 sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
                           , C.externArrayTag = t     })
   = 
-  text "//ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++name) <> semi
+  "//ensures " ++ (mkExtTmpTag name t) ++ " == " ++ ("tmp_"++name) ++ ";"
 
 
 
-sampleAExt :: (Int, C.ExtArray) -> Doc
+sampleAExt :: (Int, C.ExtArray) -> String
 sampleAExt (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
 			  , C.externArrayElemType = tttt 
                           , C.externArrayTag = t     })
-  = (retType tttt) <+> text ("tmp_"++name) <+> equals <+> arrIdx name idx $$
-  text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++name) <> semi
+  = (retType tttt) ++ (" tmp_"++name) ++ " = " ++ arrIdx name idx ++ "\n" ++
+  (mkExtTmpTag name t) ++ " = " ++ ("tmp_"++name) ++ ";"
  
   where 
-  arrIdx :: C.Name -> C.Expr a -> Doc
-  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
+  arrIdx :: C.Name -> C.Expr a -> String
+  arrIdx name' e = name' ++ "[" ++ idxFCall e ++ "];"
 
   -- Ok, because the analyzer disallows arrays or function calls in index
   -- expressions, and we assign all variables before arrays.
-  idxFCall :: C.Expr a -> Doc
+  idxFCall :: C.Expr a -> String
   idxFCall e = 
-    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
+    mkFuncCall (mkExtArrFn name) (collectArgs e)
 
 --------------------------------------------------------------------------------
 
-sampleFExtACSL :: M.Map C.Tag C.ExtFun -> [Doc]
+sampleFExtACSL :: M.Map C.Tag C.ExtFun -> [String]
 sampleFExtACSL extFMap =
   (map sampleFExtACSL1 (M.toList extFMap)) ++ (map sampleFExtACSL2 (M.toList extFMap))
 
-sampleFExtACSL1 :: (Int, C.ExtFun) -> Doc
+sampleFExtACSL1 :: (Int, C.ExtFun) -> String
 sampleFExtACSL1 (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunTag  = tag  })
   = 
-  text "assigns" <+> text (mkExtTmpTag name tag) <> semi
-sampleFExtACSL2 :: (Int, C.ExtFun) -> Doc
+  "assigns " ++ (mkExtTmpTag name tag) ++";"
+
+sampleFExtACSL2 :: (Int, C.ExtFun) -> String
 sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunTag  = tag  })
   = 
-  text "//ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++name) <> semi
+  "//ensures" ++ (mkExtTmpTag name tag) ++ " == " ++ ("tmp_"++name) ++ ";"
 
 
 -- External functions
-sampleFExt :: (Int, C.ExtFun) -> Doc
+sampleFExt :: (Int, C.ExtFun) -> String
 sampleFExt (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunType = tttt
                         , C.externFunTag  = tag  })
   = 
-  (retType tttt) <+> text ("tmp_"++name) <+> equals <+> text name <> lparen
-    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
-    <> rparen <> semi $$
-  text (mkExtTmpTag name tag) <+> equals <+> text ("tmp_"++name) <> semi
+  (retType tttt) ++ (" tmp_"++ name) ++ " = " ++ name ++ "("
+    ++ concat (punctuateS ", " $ map mkArgCall (zip [(0 :: Int) ..] args))
+    ++ ");\n" ++
+  (mkExtTmpTag name tag) ++ " = " ++ ("tmp_"++name) ++ ";"
 
      where
-     mkArgCall :: (Int, C.UExpr) -> Doc 
+     mkArgCall :: (Int, C.UExpr) -> String
      mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
-       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
+       mkFuncCall (mkExtFunArgFn i name tag) (collectArgs e)
 
 --------------------------------------------------------------------------------
 
-updateStates :: [C.Stream] -> Doc
-updateStates streams = (text "/*@\n") <+> (vcat $ map updateStACSL (streams)) <+> (text "*/") $$
-  (mkFunc updateStatesF $ vcat $ map updateSt streams)
+updateStates :: [C.Stream] -> String
+updateStates streams = ("/*@\n") ++ (concat $ intersperse ("\n") $ map updateStACSL (streams)) ++ ("*/\n") ++
+  (mkFunc updateStatesF $ concat $ intersperse ("\n") $ map updateSt streams)
   where
-  updateStACSL :: C.Stream -> Doc
+  updateStACSL :: C.Stream -> String
   updateStACSL C.Stream { C.streamId   = id
                     , C.streamExpr = e } =
-    text "assigns"<+> text (mkTmpStVar id)
-      <>  semi
+    "assigns " ++ (mkTmpStVar id) ++ ";"
 
-
-  updateSt :: C.Stream -> Doc
+  updateSt :: C.Stream -> String
   updateSt C.Stream { C.streamId   = id
                     , C.streamExpr = e } =
-    text (mkTmpStVar id) <+> equals
-      <+> mkFuncCall (mkUpdateStFn id)
-                     (map text $ collectArgs e)
-      <>  semi
+    (mkTmpStVar id) ++ " = " ++ (mkFuncCall (mkUpdateStFn id) (collectArgs e)) ++ ";"
 
 --------------------------------------------------------------------------------
 
-updateObservers :: Params -> MetaTable -> Doc
+updateObservers :: Params -> MetaTable -> String
 updateObservers params MetaTable { observerInfoMap = observers } 
-  = (text "/*@\n") <+> (vcat $ map updateObsvACSL (M.toList observers)) <+> (text "*/") $$
-  (mkFunc observersF $ vcat $ map updateObsv (M.toList observers))
+  = ("/*@\n") ++ (concat $ intersperse ("\n") $ map updateObsvACSL (M.toList observers)) ++ "*/\n" ++
+  (mkFunc observersF $ concat $ intersperse ("\n") $ map updateObsv (M.toList observers))
   where
-  updateObsvACSL :: (C.Name, ObserverInfo) -> Doc
+  updateObsvACSL :: (C.Name, ObserverInfo) -> String
   updateObsvACSL (name, ObserverInfo { observerArgs = args }) =
-    text "assigns" <+> text (withPrefix (prefix params) name) <> semi
+    "assigns " ++ (withPrefix (prefix params) name) ++ ";"
 
-  updateObsv :: (C.Name, ObserverInfo) -> Doc
+  updateObsv :: (C.Name, ObserverInfo) -> String
   updateObsv (name, ObserverInfo { observerArgs = args }) =
-    text (withPrefix (prefix params) name) <+> text "=" <+>
-    mkFuncCall (mkObserverFn name) (map text args) <> semi
+    (withPrefix (prefix params) name) ++ " = " ++
+    (mkFuncCall (mkObserverFn name) (args)) ++ ";"
 
 --------------------------------------------------------------------------------
 
-fireTriggers :: MetaTable -> Doc
+fireTriggers :: MetaTable -> String
 fireTriggers MetaTable { triggerInfoMap = triggers } 
-  = text "/*@\n assigns \\nothing; \n*/" $$
-  (mkFunc triggersF $ vcat $ map fireTrig (M.toList triggers))
+  = "/*@\n assigns \\nothing; \n*/\n" ++
+  (mkFunc triggersF $ concat $ intersperse ("\n") $ map fireTrig (M.toList triggers))
 
   where
   -- if (guard) trigger(args);
-  fireTrig :: (C.Name, TriggerInfo) -> Doc
+  fireTrig :: (C.Name, TriggerInfo) -> String
   fireTrig (name, TriggerInfo { guardArgs      = gArgs
                               , triggerArgArgs = argArgs }) 
     = 
-    text "if" <+> lparen <> guardF <> rparen $+$ nest 2 f
+    "if (" ++ guardF ++ ")\n{\n" ++ f ++ "}\n"
 
     where
-    f = text name <> lparen 
-          <> vcat (punctuate comma $ map mkArg (mkArgIdx argArgs)) 
-          <> rparen <> semi 
+    f = name ++ "(" ++ 
+          (concat $ (punctuateS ",\n" $ map mkArg (mkArgIdx argArgs)) )
+          ++ ");"
 
-    guardF :: Doc
-    guardF = mkFuncCall (mkTriggerGuardFn name) (map text gArgs)
+    guardF :: String
+    guardF = mkFuncCall (mkTriggerGuardFn name) (gArgs)
 
-    mkArg :: (Int, [String]) -> Doc
-    mkArg (i, args) = mkFuncCall (mkTriggerArgFn i name) (map text args)
+    mkArg :: (Int, [String]) -> String
+    mkArg (i, args) = mkFuncCall (mkTriggerArgFn i name) (args)
 
 --------------------------------------------------------------------------------
 
-writeACSLqueues :: MetaTable -> Doc
+writeACSLqueues :: MetaTable -> String
 writeACSLqueues MetaTable { streamInfoMap = strMap } =
-  vcat $ (text "/*ACSL following*/\n/*@"):(map varAndUpdate (M.toList strMap)) ++ [(text "*/")]
+  concat $ intersperse ("\n") $ ("/*ACSL following*/\n/*@"):(map varAndUpdate (M.toList strMap)) ++ [( "*/")]
 
   where 
-  varAndUpdate :: (C.Id, C.Stream) -> Doc
+  varAndUpdate :: (C.Id, C.Stream) -> String
   varAndUpdate (id, C.Stream { C.streamBuffer = que }) =
     updateFunc (mkQueueVar id) (fromIntegral $ length que) (mkQueuePtrVar id)
 
   -- idx = (idx + 1) % queueSize;
-  updateFunc :: String -> QueueSize -> String -> Doc
+  updateFunc :: String -> QueueSize -> String -> String
   updateFunc que sz ptr =
-    text ("global invariant a_bound_"++ ptr ++":") <+>text ptr <+> text "<" <+> int (fromIntegral sz) <+> semi <+>
-    text ("\nglobal invariant a_pos_"++ ptr ++":") <+>text ptr <+> text ">=" <+> int (0) <+> semi <+>
-    text ("\nglobal invariant a_valid_"++ ptr ++": \\valid") <+> lparen <> text que <+> text "+" <+> lparen <> text "0.." <+> int ((fromIntegral sz) - 1) <+> rparen <> rparen <> semi
+    ("global invariant a_bound_"++ ptr ++": ") ++ ptr ++ " < " ++ show (fromIntegral sz) ++ ";" ++
+    ("\nglobal invariant a_pos_"++ ptr ++": ") ++ ptr ++ ">= 0;" ++
+    ("\nglobal invariant a_valid_"++ ptr ++": \\valid (") ++ que ++ " + (0.." ++ show ((fromIntegral sz) - 1) ++" ));"
 
 --------------------------------------------------------------------------------
 
-updateBuffers :: MetaTable -> Doc
+updateBuffers :: MetaTable -> String
 updateBuffers MetaTable { streamInfoMap = strMap } 
-  = (text "/*@\n") <+> (vcat $ map updateBufACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc updateBuffersF $ vcat $ map updateBuf (M.toList strMap))
+  = ("/*@\n ") ++ (concat $ intersperse ("\n") $ map updateBufACSL (M.toList strMap)) ++ "*/\n" ++
+  (mkFunc updateBuffersF $ concat $ intersperse ("\n") $ map updateBuf (M.toList strMap))
 
   where
 
-  updateBufACSL :: (C.Id, C.Stream) -> Doc
+  updateBufACSL :: (C.Id, C.Stream) -> String
   updateBufACSL (id, _) =
     updateFuncACSL (mkQueueVar id) (mkQueuePtrVar id) (mkTmpStVar id)
 
   -- queue_strX[ptr] = newVal;
-  updateFuncACSL :: String -> String -> String -> Doc
+  updateFuncACSL :: String -> String -> String -> String
   updateFuncACSL que ptr tmp =
-    text "assigns" <+> text que <> lbrack <> text ptr <> rbrack <> semi $$
-    (text "//ensures" <+> text que <> lbrack <> text ptr <> rbrack <+> equals <+> text tmp <> semi)
+    "assigns " ++ que ++ "[" ++ ptr ++ "];\n" ++
+    ("//ensures " ++ que ++ "[" ++ ptr ++ "] = " ++ tmp ++ ";")
 
-  updateBuf :: (C.Id, C.Stream) -> Doc
+  updateBuf :: (C.Id, C.Stream) -> String
   updateBuf (id, _) =
     updateFunc (mkQueueVar id) (mkQueuePtrVar id) (mkTmpStVar id)
 
   -- queue_strX[ptr] = newVal;
-  updateFunc :: String -> String -> String -> Doc
+  updateFunc :: String -> String -> String -> String
   updateFunc que ptr tmp =
-    text que <> lbrack <> text ptr <> rbrack <+> equals <+> text tmp <> semi
+    que ++ "[" ++ ptr ++ "] = " ++ tmp ++ ";"
 
 --------------------------------------------------------------------------------
 
-updatePtrs :: MetaTable -> Doc
+updatePtrs :: MetaTable -> String
 updatePtrs MetaTable { streamInfoMap = strMap } =
-  (text "/*@\n") <+> (vcat $ map varAndUpdateACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc updatePtrsF $ vcat $ map varAndUpdate (M.toList strMap))
+  ("/*@\n") ++ (concat $ intersperse ("\n") $ map varAndUpdateACSL (M.toList strMap)) ++ "*/\n" ++
+  (mkFunc updatePtrsF $ concat $ intersperse ("\n") $ map varAndUpdate (M.toList strMap))
 
   where 
 
-  varAndUpdateACSL :: (C.Id, C.Stream) -> Doc
+  varAndUpdateACSL :: (C.Id, C.Stream) -> String
   varAndUpdateACSL (id, C.Stream { C.streamBuffer = que }) =
     updateFuncACSL (fromIntegral $ length que) (mkQueuePtrVar id)
 
   -- idx = (idx + 1) % queueSize;
-  updateFuncACSL :: QueueSize -> String -> Doc
+  updateFuncACSL :: QueueSize -> String -> String
   updateFuncACSL sz ptr =
-    text "assigns" <+> text ptr <> semi $$ (text "ensures" <+> text ptr <+> equals 
-      <+> lparen <> text ptr <+> text "+" <+> int 1 <> rparen 
-      <+> text "%" <+> int (fromIntegral sz) <> semi)
+    "assigns " ++ ptr ++ (";\n ensures " ++ ptr ++ " = (" ++ ptr ++ " + 1) %" ++ show (fromIntegral sz) ++ ";")
 
 
-  varAndUpdate :: (C.Id, C.Stream) -> Doc
+  varAndUpdate :: (C.Id, C.Stream) -> String
   varAndUpdate (id, C.Stream { C.streamBuffer = que }) =
     updateFunc (fromIntegral $ length que) (mkQueuePtrVar id)
 
   -- idx = (idx + 1) % queueSize;
-  updateFunc :: QueueSize -> String -> Doc
+  updateFunc :: QueueSize -> String -> String
   updateFunc sz ptr =
-    text ptr <+> equals 
-      <+> lparen <> text ptr <+> text "+" <+> int 1 <> rparen 
-      <+> text "%" <+> int (fromIntegral sz) <> semi
+    ptr ++ " = (" ++ ptr ++ " + 1) % " ++ show (fromIntegral sz) ++ ";"
 
 --------------------------------------------------------------------------------
 
@@ -480,8 +471,8 @@ sampleExtsF    = "sampleExts"
 
 --------------------------------------------------------------------------------
 
-retType :: C.Type a -> Doc
-retType t = text $
+retType :: C.Type a -> String
+retType t = 
   case t of
     C.Bool  -> "SBool"
 
