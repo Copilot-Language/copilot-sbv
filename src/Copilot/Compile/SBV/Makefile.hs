@@ -12,6 +12,8 @@ import Copilot.Compile.SBV.Params
 import Text.PrettyPrint.HughesPJ
 import qualified System.IO as I
 
+import System.Directory
+
 --------------------------------------------------------------------------------
 
 makefileName :: Params -> String
@@ -23,8 +25,10 @@ makefile :: Params -> String -> String -> IO ()
 makefile params dir sbvName = do
   let filePath = dir ++ '/' : (makefileName params)
       fileName = "copilot"
-  h <- I.openFile filePath I.WriteMode
-  let wr doc = I.hPutStrLn h (mkStyle doc)
+  let wr doc = I.appendFile filePath ((mkStyle doc) ++ "\n")
+
+  wr (text "a")
+  removeFile filePath
   wr (text "# Makefile rules for the Copilot driver.")
   wr (text "")
   wr $ text "driver" <> colon 

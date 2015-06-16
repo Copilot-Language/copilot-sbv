@@ -19,6 +19,7 @@ import qualified Data.Map as M
 import Data.List (intersperse)
 import qualified System.IO as I
 import Text.PrettyPrint.HughesPJ
+import System.Directory
 
 import Copilot.Compile.SBV.MetaTable
 import Copilot.Compile.SBV.Queue (QueueSize)
@@ -55,8 +56,9 @@ mkFuncCall f args = text f <> lparen <> mkArgs args <> rparen
 driver :: Params -> MetaTable -> C.Spec -> String -> String -> IO ()
 driver params meta (C.Spec streams observers _ _) dir fileName = do
   let filePath = dir ++ '/' : driverName params
-  h <- I.openFile filePath I.WriteMode
-  let wr doc = I.hPutStrLn h (mkStyle doc)
+  let wr doc = I.appendFile filePath ((mkStyle doc) ++ "\n")
+  wr (text "a")
+  removeFile filePath
 
   wr (    text "/*"
       <+> text "Driver for SBV program generated from Copilot."

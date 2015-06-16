@@ -42,6 +42,7 @@ library
                           , base >= 4.0 && < 5
                           , containers >= 0.4
                           , copilot-core >= 0.2.4
+                          , directory >= 1.2.1
                           , pretty >= 1
                           , filepath >= 1.1
 
