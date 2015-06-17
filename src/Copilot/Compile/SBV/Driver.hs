@@ -223,7 +223,12 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   extACSL $$ (mkFunc sampleExtsF $ vcat (extVars ++ extArrs ++ extFuns))
 
   where
-  extACSL = vcat [text  "/*@",vcat $ sampleVExtACSL extVMap, vcat $ sampleAExtACSL extAMap, vcat $ sampleFExtACSL extFMap ,text "*/"]
+  ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
+  extACSL = vcat [text "/*@",
+			(case ll of 
+  			[] -> text " assigns \\nothing;"
+			_ -> vcat $ ll)
+			,text "*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
   extArrs = map sampleAExt (M.toList extAMap)
   extFuns = map sampleFExt (M.toList extFMap)
@@ -278,8 +283,8 @@ sampleAExt (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
 			  , C.externArrayElemType = tttt 
                           , C.externArrayTag = t     })
-  = (retType tttt) <+> text ("tmp_"++name) <+> equals <+> arrIdx name idx $$
-  text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++name) <> semi
+  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx $$
+  text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
  
   where 
   arrIdx :: C.Name -> C.Expr a -> Doc

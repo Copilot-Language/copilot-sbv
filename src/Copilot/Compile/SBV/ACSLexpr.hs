@@ -42,7 +42,6 @@ ppExpr meta e0 = case e0 of
             let streamSize = (length ll) in
             strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
   ExternVar _ name _         -> text $ mkExtTmpVar name
--- TODO the following
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
@@ -79,7 +78,7 @@ ppOp1 op = case op of
   Atanh _  -> ppPrefix "atanh"
   Acosh _  -> ppPrefix "acosh"
   BwNot _  -> ppPrefix "~"
-  Cast _ _ -> ppPrefix "(cast)"
+  Cast _ _ -> ppPrefix ""
 
 ppOp2 :: Op2 a b c -> Doc -> Doc -> Doc
 ppOp2 op = case op of

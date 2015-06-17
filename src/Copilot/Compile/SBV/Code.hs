@@ -76,7 +76,7 @@ updateObservers meta (C.Spec _ observers _ _) =
   updateObs C.Observer { C.observerName     = name
                        , C.observerExpr     = e
                        , C.observerExprType = t } =
-    mkSBVFunc (mkObserverFn name) "/*test 005*/" mkSBVExp
+    mkSBVFunc (mkObserverFn name) ("/*test 005*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") mkSBVExp
 
     where
     mkSBVExp =
@@ -98,7 +98,7 @@ fireTriggers meta (C.Spec _ _ triggers _) =
   fireTrig C.Trigger { C.triggerName  = name
                      , C.triggerGuard = guard
                      , C.triggerArgs  = args } =
-      mkSBVFunc (mkTriggerGuardFn name) "/*test 006*/" mkSBVExp
+      mkSBVFunc (mkTriggerGuardFn name) ("/*test 006*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr guard) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/") mkSBVExp
     : map go (mkArgIdx args)
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
@@ -136,7 +136,7 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
                        , C.externArrayIdx     = idx
                        , C.externArrayIdxType = t    })
     = 
-    mkSBVFunc (mkExtArrFn name) "/*test 002 */" mkSBVExpr
+    mkSBVFunc (mkExtArrFn name) ("/*test 002*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr idx) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/") mkSBVExpr
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
