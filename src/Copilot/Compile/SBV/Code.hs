@@ -51,7 +51,7 @@ updateStates meta (C.Spec streams _ _ _) =
                              , C.streamExpr     = e
                              , C.streamExprType = t1
                                                       } 
-    = mkSBVFunc (mkUpdateStFn id) ("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") $ do
+    = mkSBVFunc (mkUpdateStFn id) ("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") $ do
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta) 
@@ -113,7 +113,7 @@ mkArgCall :: MetaTable -> String -> C.UExpr -> SBVFunc
 mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
                             , C.uExprType = t } 
   =
-  mkSBVFunc fnCallName "/*test 003*/" mkExpr
+  mkSBVFunc fnCallName ("/*test 003*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") mkExpr
   where
   mkExpr = do
     inputs <- mkInputs meta (c2Args e)

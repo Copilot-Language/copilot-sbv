@@ -15,6 +15,7 @@ import Copilot.Core
 import Copilot.Core.Type.Show (showWithType, ShowType(..), showType)
 import Prelude hiding (id)
 import Text.PrettyPrint.HughesPJ
+import Copilot.Compile.SBV.Common
 import Copilot.Compile.SBV.MetaTable as MT hiding (ExternFun)
 import qualified Data.Map as M
 import Data.List (intersperse)
@@ -40,16 +41,12 @@ ppExpr meta e0 = case e0 of
           Just Stream { streamBuffer = ll } -> 
             let streamSize = (length ll) in
             strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
+  ExternVar _ name _         -> text $ mkExtTmpVar name
 -- TODO the following
-  ExternVar _ name _         -> text "extern" <+> doubleQuotes (text name)
-  ExternFun _ name args _ _  -> 
-    text "extern" <+> doubleQuotes 
-      (text name <> lparen <> 
-         hcat (punctuate (comma <> space) (map (ppUExpr meta) args))
-       <> rparen)
+  ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
-              _ idx _ _      -> text "extern" <+> doubleQuotes (text name <> lbrack 
-                                  <> ppExpr meta idx <> rbrack)
+              _ _ _ tag      -> (text $ mkExtTmpTag name tag)
+-- TODO the following
   Local _ _ name e1 e2       -> text "local" <+> doubleQuotes (text name) <+> equals
                                           <+> ppExpr meta e1 $$ text "in" <+> ppExpr meta e2
   Var _ name                 -> text "var" <+> doubleQuotes (text name)
