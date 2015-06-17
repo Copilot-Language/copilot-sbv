@@ -237,10 +237,10 @@ sampleVExtACSL extVMap =
   (map sampleVExtACSL1 ((fst . unzip . M.toList) extVMap)) ++ (map sampleVExtACSL2 ((fst . unzip . M.toList) extVMap))
 sampleVExtACSL1 :: C.Name -> Doc
 sampleVExtACSL1 name = 
-  text "assigns" <+> text (mkExtTmpVar name) <> semi
+  text " assigns" <+> text (mkExtTmpVar name) <> semi
 sampleVExtACSL2 :: C.Name -> Doc
 sampleVExtACSL2 name = 
-  text "//ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
+  text " //ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
 
 sampleVExt :: C.Name -> Doc
 sampleVExt name = 
@@ -261,7 +261,7 @@ sampleAExtACSL1 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
                           , C.externArrayTag = t     })
   = 
-  text "assigns" <+> text (mkExtTmpTag name t) <+> semi
+  text " assigns" <+> text (mkExtTmpTag name t) <+> semi
 
 
 sampleAExtACSL2 :: (Int, C.ExtArray) -> Doc
@@ -269,7 +269,7 @@ sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
                           , C.externArrayTag = t     })
   = 
-  text "//ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++name) <> semi
+  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++name) <> semi
 
 
 
@@ -302,13 +302,13 @@ sampleFExtACSL1 (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunTag  = tag  })
   = 
-  text "assigns" <+> text (mkExtTmpTag name tag) <> semi
+  text " assigns" <+> text (mkExtTmpTag name tag) <> semi
 sampleFExtACSL2 :: (Int, C.ExtFun) -> Doc
 sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunTag  = tag  })
   = 
-  text "//ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++name) <> semi
+  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++name) <> semi
 
 
 -- External functions
@@ -331,14 +331,23 @@ sampleFExt (_, C.ExtFun { C.externFunName = name
 --------------------------------------------------------------------------------
 
 updateStates :: [C.Stream] -> Doc
-updateStates streams = (text "/*@\n") <+> (vcat $ map updateStACSL (streams)) <+> (text "*/") $$
+updateStates [] = (text "/*@\n assigns \\nothing;\n */") $$ (mkFunc updateStatesF $ vcat $ map updateSt [])
+  where
+  updateSt :: C.Stream -> Doc
+  updateSt C.Stream { C.streamId   = id
+                    , C.streamExpr = e } =
+    text (mkTmpStVar id) <+> equals
+      <+> mkFuncCall (mkUpdateStFn id)
+                     (map text $ collectArgs e)
+      <>  semi
+
+updateStates streams = (text "/*@\n") <> (hcat $ map updateStACSL (streams)) <+> (text "*/") $$
   (mkFunc updateStatesF $ vcat $ map updateSt streams)
   where
   updateStACSL :: C.Stream -> Doc
   updateStACSL C.Stream { C.streamId   = id
                     , C.streamExpr = e } =
-    text "assigns"<+> text (mkTmpStVar id)
-      <>  semi
+    text " assigns "<> text (mkTmpStVar id) <> semi <> text "\n"
 
 
   updateSt :: C.Stream -> Doc
@@ -353,12 +362,16 @@ updateStates streams = (text "/*@\n") <+> (vcat $ map updateStACSL (streams)) <+
 
 updateObservers :: Params -> MetaTable -> Doc
 updateObservers params MetaTable { observerInfoMap = observers } 
-  = (text "/*@\n") <+> (vcat $ map updateObsvACSL (M.toList observers)) <+> (text "*/") $$
+  = let ll = M.toList observers
+  in (case ll of
+  [] -> text "/*@\n assigns \\nothing;\n */"
+  _ -> (text "/*@\n") <> (hcat $ map updateObsvACSL (M.toList observers)) <+> (text "*/")
+  )$$
   (mkFunc observersF $ vcat $ map updateObsv (M.toList observers))
   where
   updateObsvACSL :: (C.Name, ObserverInfo) -> Doc
   updateObsvACSL (name, ObserverInfo { observerArgs = args }) =
-    text "assigns" <+> text (withPrefix (prefix params) name) <> semi
+    text " assigns" <+> text (withPrefix (prefix params) name) <> semi <> text "\n"
 
   updateObsv :: (C.Name, ObserverInfo) -> Doc
   updateObsv (name, ObserverInfo { observerArgs = args }) =
@@ -405,15 +418,15 @@ writeACSLqueues MetaTable { streamInfoMap = strMap } =
   -- idx = (idx + 1) % queueSize;
   updateFunc :: String -> QueueSize -> String -> Doc
   updateFunc que sz ptr =
-    text ("global invariant a_bound_"++ ptr ++":") <+>text ptr <+> text "<" <+> int (fromIntegral sz) <+> semi <+>
-    text ("\nglobal invariant a_pos_"++ ptr ++":") <+>text ptr <+> text ">=" <+> int (0) <+> semi <+>
-    text ("\nglobal invariant a_valid_"++ ptr ++": \\valid") <+> lparen <> text que <+> text "+" <+> lparen <> text "0.." <+> int ((fromIntegral sz) - 1) <+> rparen <> rparen <> semi
+    text (" global invariant a_bound_"++ ptr ++":") <+>text ptr <+> text "<" <+> int (fromIntegral sz) <+> semi <+>
+    text ("\n global invariant a_pos_"++ ptr ++":") <+>text ptr <+> text ">=" <+> int (0) <+> semi <+>
+    text ("\n global invariant a_valid_"++ ptr ++": \\valid") <+> lparen <> text que <+> text "+" <+> lparen <> text "0.." <+> int ((fromIntegral sz) - 1) <+> rparen <> rparen <> semi
 
 --------------------------------------------------------------------------------
 
 updateBuffers :: MetaTable -> Doc
 updateBuffers MetaTable { streamInfoMap = strMap } 
-  = (text "/*@\n") <+> (vcat $ map updateBufACSL (M.toList strMap)) <+> (text "*/") $$
+  = (text "/*@\n") <> (hcat $ map updateBufACSL (M.toList strMap)) <+> (text "*/") $$
   (mkFunc updateBuffersF $ vcat $ map updateBuf (M.toList strMap))
 
   where
@@ -425,8 +438,8 @@ updateBuffers MetaTable { streamInfoMap = strMap }
   -- queue_strX[ptr] = newVal;
   updateFuncACSL :: String -> String -> String -> Doc
   updateFuncACSL que ptr tmp =
-    text "assigns" <+> text que <> lbrack <> text ptr <> rbrack <> semi $$
-    (text "//ensures" <+> text que <> lbrack <> text ptr <> rbrack <+> equals <+> text tmp <> semi)
+    text " assigns" <+> text que <> lbrack <> text ptr <> rbrack <> semi <>
+    (text "\n ensures" <+> text que <> lbrack <> text ptr <> rbrack <+>  text "==" <+> text tmp <> semi <> text "\n")
 
   updateBuf :: (C.Id, C.Stream) -> Doc
   updateBuf (id, _) =
@@ -441,7 +454,7 @@ updateBuffers MetaTable { streamInfoMap = strMap }
 
 updatePtrs :: MetaTable -> Doc
 updatePtrs MetaTable { streamInfoMap = strMap } =
-  (text "/*@\n") <+> (vcat $ map varAndUpdateACSL (M.toList strMap)) <+> (text "*/") $$
+  (text "/*@\n") <> (hcat $ map varAndUpdateACSL (M.toList strMap)) <+> (text "*/") $$
   (mkFunc updatePtrsF $ vcat $ map varAndUpdate (M.toList strMap))
 
   where 
@@ -453,9 +466,9 @@ updatePtrs MetaTable { streamInfoMap = strMap } =
   -- idx = (idx + 1) % queueSize;
   updateFuncACSL :: QueueSize -> String -> Doc
   updateFuncACSL sz ptr =
-    text "assigns" <+> text ptr <> semi $$ (text "ensures" <+> text ptr <+> equals 
-      <+> lparen <> text ptr <+> text "+" <+> int 1 <> rparen 
-      <+> text "%" <+> int (fromIntegral sz) <> semi)
+    text " assigns" <+> text ptr <> semi <> (text "\n ensures" <+> text ptr <+> text "==" 
+      <+> lparen <> text "\\old (" <> text ptr <+> text ") +" <+> int 1 <> rparen 
+      <+> text "%" <+> int (fromIntegral sz) <> semi <> text "\n")
 
 
   varAndUpdate :: (C.Id, C.Stream) -> Doc

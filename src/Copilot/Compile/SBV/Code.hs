@@ -17,6 +17,7 @@ import Copilot.Compile.SBV.Copilot2SBV
 import Copilot.Compile.SBV.MetaTable
 import qualified Copilot.Compile.SBV.Witness as W
 import Copilot.Compile.SBV.Common
+import Copilot.Compile.SBV.ACSLexpr
 
 import qualified Copilot.Core.PrettyPrint as PP
 import qualified Text.PrettyPrint.HughesPJ as PJ
@@ -46,10 +47,11 @@ updateStates meta (C.Spec streams _ _ _) =
   where
   updateStreamState :: C.Stream -> SBVFunc
   updateStreamState C.Stream { C.streamId       = id
+                             , C.streamBuffer   = buffer
                              , C.streamExpr     = e
                              , C.streamExprType = t1
                                                       } 
-    = mkSBVFunc (mkUpdateStFn id) ("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/") $ do
+    = mkSBVFunc (mkUpdateStFn id) ("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") $ do
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta) 

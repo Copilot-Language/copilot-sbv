@@ -47,6 +47,7 @@ library
                           , filepath >= 1.1
 
   exposed-modules         : Copilot.Compile.SBV
+                          , Copilot.Compile.SBV.ACSLexpr
                           , Copilot.Compile.SBV.Code
                           , Copilot.Compile.SBV.Common
                           , Copilot.Compile.SBV.Copilot2SBV
