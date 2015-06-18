@@ -59,6 +59,7 @@ compileWithSBV params sbvs spec0 = do
   putStrLn ""
   putStrLn $ "Generating Copilot header " ++ c99HeaderName (prefix params) ++ " .."
   genC99Header (prefix params) dirName spec
+  writeFile (combine dirName "copilot_stdint.h") (unlines cpstdint)
 
   putStrLn ""
   putStrLn $ "Generating Copilot driver Makefile rules .."
@@ -82,6 +83,7 @@ readme =
   , ""
   , "To build, you will need to ensure that all external variables and triggers are visible."
   , "Also, modify driver.c to include a main() function."
+  , "Also, modify copilot_stdint.h to include your own definition of uint 8, 16, 32, 64 and int 8, 16, 32, 64."
   , "Once you have a valid C program, execute"
   , ""
   , "  > make driver"
@@ -89,6 +91,13 @@ readme =
   , "Modify the Makefile rules (Makefile and copilot.mk) as you see fit."
   , ""
   , "Please report bugs to lee pike at gmail . com (remove all spaces)."
+  ]
+
+cpstdint :: [String]
+cpstdint = 
+  [ "//delete the following line"
+  , "#include <stdint.h>"
+  , "\n\n//Your definition following"
   ]
 
 --------------------------------------------------------------------------------
