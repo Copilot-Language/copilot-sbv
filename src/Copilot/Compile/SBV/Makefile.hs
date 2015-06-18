@@ -42,8 +42,8 @@ makefile params dir sbvName = do
                   , text "-o"
                   , text "$@"
                   , archive])
-  wr $ text "fval" <> colon 
-        <+> text ("\nframa-c -val -main step internal.h copilot.h *.c")
+  wr $ text "\nfval" <> colon 
+        <+> text ("frama-c -val -main step internal.h copilot.h *.c")
 
   where 
   archive = text sbvName <> text ".a"
