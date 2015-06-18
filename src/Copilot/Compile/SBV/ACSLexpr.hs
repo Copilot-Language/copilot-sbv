@@ -45,10 +45,9 @@ ppExpr meta e0 = case e0 of
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
--- TODO the following
-  Local _ _ name e1 e2       -> text "local" <+> doubleQuotes (text name) <+> equals
-                                          <+> ppExpr meta e1 $$ text "in" <+> ppExpr meta e2
-  Var _ name                 -> text "var" <+> doubleQuotes (text name)
+  Local _ _ name e1 e2       -> text "(\\let" <+> (text name) <+> equals
+                                          <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2) <+> (text ")")
+  Var _ name                 -> (text name)
   Op1 op e                   -> ppOp1 op (ppExpr meta e)
   Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
   Op3 op e1 e2 e3            -> ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
