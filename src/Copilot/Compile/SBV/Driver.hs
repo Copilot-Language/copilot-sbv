@@ -186,7 +186,7 @@ varDecls meta = vcat $ map varDecl (getVars meta)
 
   varDecl :: Decl -> Doc
   varDecl Decl { retT = t, declVar = v, initVal = i } =
-    t <+> v <+> equals <+> i <> semi
+    text "static"<+> t <+> v <+> equals <+> i <> semi
 
   cShow :: String -> String
   cShow "True"  = show (1::Int)
@@ -217,7 +217,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc sampleExtsF $ vcat (extADecl ++ extVars ++ extArrs ++ extFuns))
+  extACSL $$ (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extVars ++ extArrs ++ extFuns))
 
   where
   ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
@@ -338,7 +338,7 @@ sampleFExt (_, C.ExtFun { C.externFunName = name
 --------------------------------------------------------------------------------
 
 updateStates :: [C.Stream] -> Doc
-updateStates [] = (text "/*@\n assigns \\nothing;\n */") $$ (mkFunc updateStatesF $ vcat $ map updateSt [])
+updateStates [] = (text "/*@\n assigns \\nothing;\n */") $$ (mkFunc ("static " ++ updateStatesF) $ vcat $ map updateSt [])
   where
   updateSt :: C.Stream -> Doc
   updateSt C.Stream { C.streamId   = id
@@ -374,7 +374,7 @@ updateObservers params MetaTable { observerInfoMap = observers }
   [] -> text "/*@\n assigns \\nothing;\n */"
   _ -> (text "/*@\n") <> (hcat $ map updateObsvACSL (M.toList observers)) <+> (text "*/")
   )$$
-  (mkFunc observersF $ vcat $ map updateObsv (M.toList observers))
+  (mkFunc ("static " ++ observersF) $ vcat $ map updateObsv (M.toList observers))
   where
   updateObsvACSL :: (C.Name, ObserverInfo) -> Doc
   updateObsvACSL (name, ObserverInfo { observerArgs = args }) =
@@ -390,7 +390,7 @@ updateObservers params MetaTable { observerInfoMap = observers }
 fireTriggers :: MetaTable -> Doc
 fireTriggers MetaTable { triggerInfoMap = triggers } 
   = text "/*@\n assigns \\nothing; \n*/" $$
-  (mkFunc triggersF $ vcat $ map fireTrig (M.toList triggers))
+  (mkFunc ("static " ++ triggersF) $ vcat $ map fireTrig (M.toList triggers))
 
   where
   -- if (guard) trigger(args);
@@ -434,7 +434,7 @@ writeACSLqueues MetaTable { streamInfoMap = strMap } =
 updateBuffers :: MetaTable -> Doc
 updateBuffers MetaTable { streamInfoMap = strMap } 
   = (text "/*@\n") <> (hcat $ map updateBufACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc updateBuffersF $ vcat $ map updateBuf (M.toList strMap))
+  (mkFunc ("static " ++ updateBuffersF) $ vcat $ map updateBuf (M.toList strMap))
 
   where
 
@@ -462,7 +462,7 @@ updateBuffers MetaTable { streamInfoMap = strMap }
 updatePtrs :: MetaTable -> Doc
 updatePtrs MetaTable { streamInfoMap = strMap } =
   (text "/*@\n") <> (hcat $ map varAndUpdateACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc updatePtrsF $ vcat $ map varAndUpdate (M.toList strMap))
+  (mkFunc ("static " ++ updatePtrsF) $ vcat $ map varAndUpdate (M.toList strMap))
 
   where 
 
