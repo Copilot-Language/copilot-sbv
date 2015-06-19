@@ -217,7 +217,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extVars ++ extArrs ++ extFuns))
+  extACSL $$ (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extFDecl ++ extVars ++ extArrs ++ extFuns))
 
   where
   ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
@@ -228,6 +228,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 			,text "*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
   extADecl = map sampleAExt1 (M.toList extAMap)
+  extFDecl = map sampleFExt1 (M.toList extFMap)
   extArrs = map sampleAExt (M.toList extAMap)
   extFuns = map sampleFExt (M.toList extFMap)
 
@@ -272,7 +273,7 @@ sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
                           , C.externArrayTag = t     })
   = 
-  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++name) <> semi
+  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
 
 sampleAExt1 :: (Int, C.ExtArray) -> Doc
 sampleAExt1 (_, C.ExtArray { C.externArrayName = name
@@ -315,25 +316,32 @@ sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunTag  = tag  })
   = 
-  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++name) <> semi
+  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
 
 
 -- External functions
+sampleFExt1 :: (Int, C.ExtFun) -> Doc
+sampleFExt1 (_, C.ExtFun { C.externFunName = name
+                        , C.externFunArgs = args 
+                        , C.externFunType = tttt
+                        , C.externFunTag  = tag  })
+  = 
+  (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name tag)) <+> equals <+> text name <> lparen
+    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
+    <> rparen <> semi
+
+     where
+     mkArgCall :: (Int, C.UExpr) -> Doc 
+     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
+       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
+
 sampleFExt :: (Int, C.ExtFun) -> Doc
 sampleFExt (_, C.ExtFun { C.externFunName = name
                         , C.externFunArgs = args 
                         , C.externFunType = tttt
                         , C.externFunTag  = tag  })
   = 
-  (retType tttt) <+> text ("tmp_"++name) <+> equals <+> text name <> lparen
-    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
-    <> rparen <> semi $$
-  text (mkExtTmpTag name tag) <+> equals <+> text ("tmp_"++name) <> semi
-
-     where
-     mkArgCall :: (Int, C.UExpr) -> Doc 
-     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
-       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
+  text (mkExtTmpTag name tag) <+> equals <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
 
 --------------------------------------------------------------------------------
 
@@ -349,7 +357,7 @@ updateStates [] = (text "/*@\n assigns \\nothing;\n */") $$ (mkFunc ("static " +
       <>  semi
 
 updateStates streams = (text "/*@\n") <> (hcat $ map updateStACSL (streams)) <+> (text "*/") $$
-  (mkFunc updateStatesF $ vcat $ map updateSt streams)
+  (mkFunc ("static " ++ updateStatesF) $ vcat $ map updateSt streams)
   where
   updateStACSL :: C.Stream -> Doc
   updateStACSL C.Stream { C.streamId   = id
@@ -372,9 +380,9 @@ updateObservers params MetaTable { observerInfoMap = observers }
   = let ll = M.toList observers
   in (case ll of
   [] -> text "/*@\n assigns \\nothing;\n */"
-  _ -> (text "/*@\n") <> (hcat $ map updateObsvACSL (M.toList observers)) <+> (text "*/")
+  _ -> (text "/*@\n") <> (hcat $ map updateObsvACSL (ll)) <+> (text "*/")
   )$$
-  (mkFunc ("static " ++ observersF) $ vcat $ map updateObsv (M.toList observers))
+  (mkFunc ("static " ++ observersF) $ vcat $ map updateObsv (ll))
   where
   updateObsvACSL :: (C.Name, ObserverInfo) -> Doc
   updateObsvACSL (name, ObserverInfo { observerArgs = args }) =
@@ -415,7 +423,13 @@ fireTriggers MetaTable { triggerInfoMap = triggers }
 
 writeACSLqueues :: MetaTable -> Doc
 writeACSLqueues MetaTable { streamInfoMap = strMap } =
-  vcat $ (text "/*ACSL following*/\n/*@"):(map varAndUpdate (M.toList strMap)) ++ [(text "*/")]
+  let ll = M.toList strMap
+  in 
+
+  vcat $ (text "/*ACSL following*/\n"):(case ll of
+  [] -> [text ""]
+  _ -> (text "/*@" :(map varAndUpdate (ll) ++ [(text "*/")]))
+  ) 
 
   where 
   varAndUpdate :: (C.Id, C.Stream) -> Doc
@@ -433,8 +447,12 @@ writeACSLqueues MetaTable { streamInfoMap = strMap } =
 
 updateBuffers :: MetaTable -> Doc
 updateBuffers MetaTable { streamInfoMap = strMap } 
-  = (text "/*@\n") <> (hcat $ map updateBufACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc ("static " ++ updateBuffersF) $ vcat $ map updateBuf (M.toList strMap))
+  = let ll = M.toList strMap
+  in (case ll of
+  [] -> text "/*@\n assigns \\nothing;\n */"
+  _ -> (text "/*@\n") <> (hcat $ map updateBufACSL (ll)) <+> (text "*/")
+  )$$
+  (mkFunc ("static " ++ updateBuffersF) $ vcat $ map updateBuf (ll))
 
   where
 
@@ -461,8 +479,12 @@ updateBuffers MetaTable { streamInfoMap = strMap }
 
 updatePtrs :: MetaTable -> Doc
 updatePtrs MetaTable { streamInfoMap = strMap } =
-  (text "/*@\n") <> (hcat $ map varAndUpdateACSL (M.toList strMap)) <+> (text "*/") $$
-  (mkFunc ("static " ++ updatePtrsF) $ vcat $ map varAndUpdate (M.toList strMap))
+  let ll = M.toList strMap
+  in (case ll of
+  [] -> text "/*@\n assigns \\nothing;\n */"
+  _ -> (text "/*@\n") <> (hcat $ map varAndUpdateACSL (ll)) <+> (text "*/")
+  )$$
+  (mkFunc ("static " ++ updatePtrsF) $ vcat $ map varAndUpdate (ll))
 
   where 
 
