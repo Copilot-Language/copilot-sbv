@@ -217,7 +217,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc sampleExtsF $ vcat (extVars ++ extArrs ++ extFuns))
+  extACSL $$ (mkFunc sampleExtsF $ vcat (extADecl ++ extVars ++ extArrs ++ extFuns))
 
   where
   ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
@@ -227,6 +227,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 			_ -> vcat $ ll)
 			,text "*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
+  extADecl = map sampleAExt1 (M.toList extAMap)
   extArrs = map sampleAExt (M.toList extAMap)
   extFuns = map sampleFExt (M.toList extFMap)
 
@@ -273,15 +274,12 @@ sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
   = 
   text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++name) <> semi
 
-
-
-sampleAExt :: (Int, C.ExtArray) -> Doc
-sampleAExt (_, C.ExtArray { C.externArrayName = name
+sampleAExt1 :: (Int, C.ExtArray) -> Doc
+sampleAExt1 (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
 			  , C.externArrayElemType = tttt 
                           , C.externArrayTag = t     })
-  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx $$
-  text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
+  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx
  
   where 
   arrIdx :: C.Name -> C.Expr a -> Doc
@@ -292,6 +290,13 @@ sampleAExt (_, C.ExtArray { C.externArrayName = name
   idxFCall :: C.Expr a -> Doc
   idxFCall e = 
     mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
+
+sampleAExt :: (Int, C.ExtArray) -> Doc
+sampleAExt (_, C.ExtArray { C.externArrayName = name
+                          , C.externArrayIdx = idx 
+			  , C.externArrayElemType = tttt 
+                          , C.externArrayTag = t     })
+  = text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
 
 --------------------------------------------------------------------------------
 

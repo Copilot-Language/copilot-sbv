@@ -43,7 +43,9 @@ makefile params dir sbvName = do
                   , text "$@"
                   , archive])
   wr $ text "\nfval" <> colon 
-        <+> text ("\n\tframa-c -val -main step internal.h copilot.h *.c")
+        <+> text ("\n\tframa-c -val -main step *.h *.c")
+  wr $ text "\nsplint" <> colon 
+        <+> text ("\n\tsplint -comment-char % *.h *.c")
 
   where 
   archive = text sbvName <> text ".a"
