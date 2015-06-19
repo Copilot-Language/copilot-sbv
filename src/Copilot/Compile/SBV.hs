@@ -124,6 +124,38 @@ cpstdint =
   , "typedef long long int Sint64_t;*/\n\n#endif"
   ]
 
+myLib = [String]
+myLib =   
+[ "#ifndef __copilotstdint__HEADER_INCLUDED__\n#define __copilotstdint__HEADER_INCLUDED__"
+  ,"//Generic header (not working for ccomp)"
+  , "#include <stdint.h>"
+  , "\ntypedef uint8_t Suint8_t;"
+  , "typedef int8_t Sint8_t;"
+
+  , "\ntypedef uint16_t Suint16_t;"
+  , "typedef int16_t Sint16_t;"
+
+  , "\ntypedef uint32_t Suint32_t;"
+  , "typedef int32_t Sint32_t;"
+
+  , "\ntypedef uint64_t Suint64_t;"
+  , "typedef int64_t Sint64_t;"
+
+  , "\n\n//Your definition following (version for 32bits provided)."
+  , "\n/*typedef unsigned char Suint8_t;"
+  , "typedef char Sint8_t;"
+
+  , "\ntypedef unsigned short Suint16_t;"
+  , "typedef short Sint16_t;"
+
+  , "\ntypedef unsigned int Suint32_t;"
+  , "typedef int Sint32_t;"
+
+  , "\ntypedef unsigned long long int Suint64_t;"
+  , "typedef long long int Sint64_t;*/\n\n#endif"
+  ]
+
+
 --------------------------------------------------------------------------------
 
 omitSBVDriver :: [(a, S.SBVCodeGen (), String)] -> [(a, S.SBVCodeGen (), String)]

@@ -186,7 +186,7 @@ varDecls meta = vcat $ map varDecl (getVars meta)
 
   varDecl :: Decl -> Doc
   varDecl Decl { retT = t, declVar = v, initVal = i } =
-    t <+> v <+> equals <+> i <> semi
+    t <+> v <+> equals <+> i <> semi <+> text "//" <> 
 
   cShow :: String -> String
   cShow "True"  = show (1::Int)
