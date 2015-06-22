@@ -270,7 +270,8 @@ c2sOp2 op = case op of
                                          Nothing -> badUsage "Using the SBV backend, shiftR only supports constant shift indicies"
                                          Just x  -> S.shiftR vec (fromIntegral x)
 
-  Fdiv  _ -> noFloatOpsErr "fdiv"
+  Fdiv  C.Float  -> case W.numInst         C.Float  of W.NumInst         -> (/)
+  Fdiv  C.Double -> case W.numInst         C.Double of W.NumInst         -> (/)
   Pow   _ -> noFloatOpsErr "pow"
   Logb  _ -> noFloatOpsErr "logb"
 

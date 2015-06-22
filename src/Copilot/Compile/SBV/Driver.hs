@@ -539,4 +539,7 @@ retType t = text $
     C.Word32 -> "SWord32"
     C.Word64 -> "SWord64"
 
+    C.Float  -> "SFloat"
+    C.Double -> "SDouble"
+
     _          -> C.badUsage "You've tried to compile a Copilot program to SBV with a type SBV does not support.  SBV does not support floats or doubles.  To compile programs using these types, use the copilot-c99 (Atom) backend.  See README.md for more information."

@@ -28,6 +28,9 @@ import Data.Bits
 badInst :: a
 badInst =  error "Fatal cast in the witnesses of SBV in copilot-sbv.  Are you sure that SBV supports the type you are using?  (It doesn't support floats or doubles.)  If you you are, or you don't understand the error, email leepike @ gmail . com (remove spaces) or file a bug report on github.com"
 
+badFloat :: a
+badFloat =  error "Fatal error : You did something illegal with floating points numbers (a mod b, or something like that)"
+
 --------------------------------------------------------------------------------
 
 data SymWordInst a = S.SymWord a => SymWordInst
@@ -40,8 +43,8 @@ symWordInst t =
     C.Int32  -> SymWordInst ; C.Int64  -> SymWordInst
     C.Word8  -> SymWordInst ; C.Word16 -> SymWordInst
     C.Word32 -> SymWordInst ; C.Word64 -> SymWordInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> SymWordInst ; C.Float  -> SymWordInst
+    C.Double -> SymWordInst ; C.Double -> SymWordInst
 
 --------------------------------------------------------------------------------
 
@@ -55,8 +58,8 @@ numInst t =
     C.Int32  -> NumInst ; C.Int64  -> NumInst
     C.Word8  -> NumInst ; C.Word16 -> NumInst
     C.Word32 -> NumInst ; C.Word64 -> NumInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> NumInst ; C.Float  -> NumInst
+    C.Double -> NumInst ; C.Double -> NumInst
 
 --------------------------------------------------------------------------------
 
@@ -74,8 +77,8 @@ hasSignAndSizeInst t =
     C.Word16 -> HasSignAndSizeInst
     C.Word32 -> HasSignAndSizeInst 
     C.Word64 -> HasSignAndSizeInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> HasSignAndSizeInst
+    C.Double -> HasSignAndSizeInst
 
 --------------------------------------------------------------------------------
 
@@ -89,8 +92,8 @@ eqInst t =
     C.Int32  -> EqInst ; C.Int64  -> EqInst
     C.Word8  -> EqInst ; C.Word16 -> EqInst
     C.Word32 -> EqInst ; C.Word64 -> EqInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> EqInst ; C.Float  -> EqInst
+    C.Double -> EqInst ; C.Double -> EqInst
 
 --------------------------------------------------------------------------------
 
@@ -108,8 +111,8 @@ divInst t =
     C.Word16 -> BVDivisibleInst
     C.Word32 -> BVDivisibleInst
     C.Word64 -> BVDivisibleInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> badFloat
+    C.Double -> badFloat
 
 --------------------------------------------------------------------------------
 
@@ -123,8 +126,8 @@ ordInst t =
     C.Int32  -> OrdInst ; C.Int64  -> OrdInst
     C.Word8  -> OrdInst ; C.Word16 -> OrdInst
     C.Word32 -> OrdInst ; C.Word64 -> OrdInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> OrdInst ; C.Float  -> OrdInst
+    C.Double -> OrdInst ; C.Double -> OrdInst
 
 --------------------------------------------------------------------------------
 
@@ -138,8 +141,8 @@ mergeableInst t =
     C.Int32  -> MergeableInst ; C.Int64  -> MergeableInst
     C.Word8  -> MergeableInst ; C.Word16 -> MergeableInst
     C.Word32 -> MergeableInst ; C.Word64 -> MergeableInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> MergeableInst ; C.Float -> MergeableInst
+    C.Double -> MergeableInst ; C.Double -> MergeableInst
 
 --------------------------------------------------------------------------------
 
@@ -153,8 +156,8 @@ bitsInst t =
     C.Int32  -> BitsInst ; C.Int64  -> BitsInst
     C.Word8  -> BitsInst ; C.Word16 -> BitsInst
     C.Word32 -> BitsInst ; C.Word64 -> BitsInst
-    C.Float  -> badInst
-    C.Double -> badInst
+    C.Float  -> badFloat
+    C.Double -> badFloat
 
 --------------------------------------------------------------------------------
 
