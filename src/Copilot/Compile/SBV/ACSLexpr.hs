@@ -32,7 +32,7 @@ ptrName id = text "ptr_" <> int id
 --------------------------------------------------------------------------------
 
 ppExpr :: MT.MetaTable -> Expr a -> Doc
-ppExpr meta e0 = case e0 of
+ppExpr meta e0 = parens $ case e0 of
   Const t x                  -> text (showWithType Haskell t x)
   Drop _ 0 id                -> strmName id <> lbrack <> (ptrName id) <> rbrack
   Drop _ i id                -> 
@@ -58,24 +58,24 @@ ppUExpr meta UExpr { uExprExpr = e0 } = ppExpr meta e0
 ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
-  Abs _    -> ppPrefix "abs"
-  Sign _   -> ppPrefix "signum"
-  Recip _  -> ppPrefix "recip"
-  Exp _    -> ppPrefix "exp"
-  Sqrt _   -> ppPrefix "sqrt"
-  Log _    -> ppPrefix "log"
-  Sin _    -> ppPrefix "sin"
-  Tan _    -> ppPrefix "tan"
-  Cos _    -> ppPrefix "cos"
-  Asin _   -> ppPrefix "asin"
-  Atan _   -> ppPrefix "atan"
-  Acos _   -> ppPrefix "acos"
-  Sinh _   -> ppPrefix "sinh"
-  Tanh _   -> ppPrefix "tanh"
-  Cosh _   -> ppPrefix "cosh"
-  Asinh _  -> ppPrefix "asinh"
-  Atanh _  -> ppPrefix "atanh"
-  Acosh _  -> ppPrefix "acosh"
+  Abs _    -> ppPrefix "\\abs"
+  Sign _   -> ppPrefix "\\signum"
+  Recip _  -> ppPrefix "\\recip"
+  Exp _    -> ppPrefix "\\exp"
+  Sqrt _   -> ppPrefix "\\sqrt"
+  Log _    -> ppPrefix "\\log"
+  Sin _    -> ppPrefix "\\sin"
+  Tan _    -> ppPrefix "\\tan"
+  Cos _    -> ppPrefix "\\cos"
+  Asin _   -> ppPrefix "\\asin"
+  Atan _   -> ppPrefix "\\atan"
+  Acos _   -> ppPrefix "\\acos"
+  Sinh _   -> ppPrefix "\\sinh"
+  Tanh _   -> ppPrefix "\\tanh"
+  Cosh _   -> ppPrefix "\\cosh"
+  Asinh _  -> ppPrefix "\\asinh"
+  Atanh _  -> ppPrefix "\\atanh"
+  Acosh _  -> ppPrefix "\\acosh"
   BwNot _  -> ppPrefix "~"
   Cast _ _ -> ppPrefix ""
 
@@ -89,8 +89,8 @@ ppOp2 op = case op of
   Div      _   -> ppInfix "/"
   Mod      _   -> ppInfix "%"
   Fdiv     _   -> ppInfix "/"
-  Pow      _   -> ppInfix "**"
-  Logb     _   -> ppInfix "logBase"
+  Pow      _   -> ppPrefix2 "\\pow"
+  Logb     _   -> \ a b -> (text "(\\log" <> (a) <> (text ") / ( \\log") <> (b) <> text ")")
   Eq       _   -> ppInfix "=="
   Ne       _   -> ppInfix "!="
   Le       _   -> ppInfix "<="
@@ -115,8 +115,12 @@ ppOp3 op = case op of
 ppInfix :: String -> Doc -> Doc -> Doc
 ppInfix cs doc1 doc2 = parens $ doc1 <+> text cs <+> doc2
 
+
+ppPrefix2 :: String -> Doc -> Doc -> Doc
+ppPrefix2 cs doc1 doc2 = parens $ text cs <+> doc1 <> text "," <+> doc2
+
 ppPrefix :: String -> Doc -> Doc
-ppPrefix cs = (text cs <+>)
+ppPrefix cs doc = (text cs <+> lparen <> doc <> rparen)
 
 --------------------------------------------------------------------------------
 {-

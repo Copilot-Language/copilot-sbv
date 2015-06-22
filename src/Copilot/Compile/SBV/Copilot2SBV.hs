@@ -195,8 +195,8 @@ c2sExpr_ e0 env inputs = case e0 of
 
 noFloatOpsErr :: String -> a
 noFloatOpsErr op = 
-  badUsage ("Floating/Double operators not supported for the SBV backend: " 
-         ++ "operator " ++ op ++ " not supported.")
+  badUsage ("The operation you used is not supported by the SBV backend: " 
+         ++ "operator " ++ op ++ " not supported. Please change it with your math skills to something supported.")
 
 --------------------------------------------------------------------------------      
 
@@ -213,22 +213,38 @@ c2sOp1 op = case op of
   Cast t0 t1 -> case W.castInst t0 t1 of 
                   W.CastInst -> W.sbvCast
 
-  Recip _ -> noFloatOpsErr "recip"
-  Exp   _ -> noFloatOpsErr "exp"
-  Sqrt  _ -> noFloatOpsErr "sqrt"
-  Log   _ -> noFloatOpsErr "log"
-  Sin   _ -> noFloatOpsErr "sin"
-  Tan   _ -> noFloatOpsErr "tan"
-  Cos   _ -> noFloatOpsErr "cos"
-  Asin  _ -> noFloatOpsErr "asin"
-  Atan  _ -> noFloatOpsErr "atan"
-  Acos  _ -> noFloatOpsErr "acos"
-  Sinh  _ -> noFloatOpsErr "sinh"
-  Tanh  _ -> noFloatOpsErr "tanh"
-  Cosh  _ -> noFloatOpsErr "cosh"
-  Asinh _ -> noFloatOpsErr "asinh"
-  Atanh _ -> noFloatOpsErr "atanh"
-  Acosh _ -> noFloatOpsErr "acosh"
+  Recip _      -> noFloatOpsErr "recip"
+
+  Exp   C.Float  -> exp
+  Exp   C.Double -> exp
+  Sqrt  C.Float  -> sqrt
+  Sqrt  C.Double -> sqrt
+  Log   C.Float  -> log
+  Log   C.Double -> log
+  Sin   C.Float  -> sin
+  Sin   C.Double -> sin
+  Cos   C.Float  -> cos
+  Cos   C.Double -> cos
+  Tan   C.Float  -> tan
+  Tan   C.Double -> tan
+  Asin  C.Float  -> asin
+  Asin  C.Double -> asin
+  Acos  C.Float  -> acos
+  Acos  C.Double -> acos
+  Atan  C.Float  -> atan
+  Atan  C.Double -> atan
+  Sinh  C.Float  -> sinh
+  Sinh  C.Double -> sinh
+  Cosh  C.Float  -> cosh
+  Cosh  C.Double -> cosh
+  Tanh  C.Float  -> tanh
+  Tanh  C.Double -> tanh
+  Asinh C.Float  -> asinh
+  Asinh C.Double -> asinh
+  Acosh C.Float  -> acosh
+  Acosh C.Double -> acosh
+  Atanh C.Float  -> atanh
+  Atanh C.Double -> atanh
 
 --------------------------------------------------------------------------------
 
@@ -272,8 +288,11 @@ c2sOp2 op = case op of
 
   Fdiv  C.Float  -> case W.numInst         C.Float  of W.NumInst         -> (/)
   Fdiv  C.Double -> case W.numInst         C.Double of W.NumInst         -> (/)
-  Pow   _ -> noFloatOpsErr "pow"
-  Logb  _ -> noFloatOpsErr "logb"
+  Pow   C.Float  -> (**)
+  Pow   C.Double -> (**)
+  Logb  C.Float  -> logBase
+  Logb  C.Double -> logBase
+
 
 c2sOp3 :: C.Op3 a b c d -> S.SBV a -> S.SBV b -> S.SBV c -> S.SBV d
 c2sOp3 op = case op of
