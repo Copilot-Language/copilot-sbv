@@ -4,7 +4,8 @@ Overview
 ========
 [copilot-sbv](http://hackage.haskell.org/package/copilot-sbv) Another back-end
 that translates to [SBV](http://hackage.haskell.org/package/sbv), using its code
-generator to generate hard real-time C code as well.  The ad
+generator to generate hard real-time C code as well, with ACSL contracts, 
+for the value-analysis plugin and compiling the code with CompCert. 
 
 Copilot is a stream (i.e., infinite lists) domain-specific language (DSL) in
 Haskell that compiles into embedded C.  Copilot is similar in spirit to
@@ -33,8 +34,9 @@ and other packages automatically.  Execute
 
 Dependencies
 =============
-copilot-sbv depends on the [SBV](http://hackage.haskell.org/package/sbv) library
-to generate hard real-time C code.
+copilot-sbv depends on the latest [SBV](http://hackage.haskell.org/package/sbv) library
+to generate hard real-time C code. It is recommanded to obtain it from the git 
+[repository](https://github.com/LeventErkok/sbv/), and compile it yourself (ghc 7.10 needed). 
 
 Resources
 =========
