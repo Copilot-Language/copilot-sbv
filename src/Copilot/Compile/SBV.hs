@@ -34,7 +34,7 @@ compile :: Params -> C.Spec -> IO ()
 compile p s = compileWithSBV p [] s
 
 -- | sbvs are optional additional SBVCodeGens to generate.
-compileWithSBV :: Params -> [(String, S.SBVCodeGen (), String)] -> C.Spec -> IO ()
+compileWithSBV :: Params -> [(String, S.SBVCodeGen ())] -> C.Spec -> IO ()
 compileWithSBV params sbvs spec0 = do
   let meta    = allocMetaTable spec
       dirName = withPrefix (prefix params) sbvDirName
@@ -95,9 +95,9 @@ readme =
 
 --------------------------------------------------------------------------------
 
-omitSBVDriver :: [(a, S.SBVCodeGen (), String)] -> [(a, S.SBVCodeGen (), String)]
+omitSBVDriver :: [(a, S.SBVCodeGen ())] -> [(a, S.SBVCodeGen ())]
 omitSBVDriver = map omit 
   where
-  omit (a, cg, cc) = (a, S.cgGenerateDriver False >> cg, cc)
+  omit (a, cg) = (a, S.cgGenerateDriver False >> cg)
 
 --------------------------------------------------------------------------------

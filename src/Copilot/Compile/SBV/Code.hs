@@ -33,10 +33,10 @@ import Prelude hiding (id)
 
 --------------------------------------------------------------------------------
 
-type SBVFunc  = (String, S.SBVCodeGen (), String)
+type SBVFunc  = (String, S.SBVCodeGen ())
 
-mkSBVFunc :: String -> String -> S.SBVCodeGen () -> (String, S.SBVCodeGen (), String)
-mkSBVFunc str cc codeGen = (str, codeGen, cc)
+mkSBVFunc :: String -> S.SBVCodeGen () -> (String, S.SBVCodeGen ())
+mkSBVFunc str codeGen = (str, codeGen)
 
 --------------------------------------------------------------------------------
 
@@ -51,7 +51,8 @@ updateStates meta (C.Spec streams _ _ _) =
                              , C.streamExpr     = e
                              , C.streamExprType = t1
                                                       } 
-    = mkSBVFunc (mkUpdateStFn id) ("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") $ do
+    = mkSBVFunc (mkUpdateStFn id) $ do
+        S.cgAddDecl [("/*test 001*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta) 
@@ -76,11 +77,12 @@ updateObservers meta (C.Spec _ observers _ _) =
   updateObs C.Observer { C.observerName     = name
                        , C.observerExpr     = e
                        , C.observerExprType = t } =
-    mkSBVFunc (mkObserverFn name) ("/*test 005*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") mkSBVExp
+    mkSBVFunc (mkObserverFn name) mkSBVExp
 
     where
     mkSBVExp =
       do
+        S.cgAddDecl [("/*test 005*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         W.SymWordInst <- return (W.symWordInst t)
@@ -98,11 +100,12 @@ fireTriggers meta (C.Spec _ _ triggers _) =
   fireTrig C.Trigger { C.triggerName  = name
                      , C.triggerGuard = guard
                      , C.triggerArgs  = args } =
-      mkSBVFunc (mkTriggerGuardFn name) ("/*test 006*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr guard) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/") mkSBVExp
+      mkSBVFunc (mkTriggerGuardFn name) mkSBVExp
     : map go (mkArgIdx args)
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
     mkSBVExp = do
+      S.cgAddDecl [("/*test 006*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr guard) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args guard)
       let e = c2sExpr inputs guard
       S.cgReturn e
@@ -113,9 +116,10 @@ mkArgCall :: MetaTable -> String -> C.UExpr -> SBVFunc
 mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
                             , C.uExprType = t } 
   =
-  mkSBVFunc fnCallName ("/*test 003*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/") mkExpr
+  mkSBVFunc fnCallName mkExpr
   where
   mkExpr = do
+    S.cgAddDecl [("/*test 003*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr e) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
     inputs <- mkInputs meta (c2Args e)
     let e' = c2sExpr inputs e
     W.SymWordInst <- return (W.symWordInst t)
@@ -136,10 +140,11 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
                        , C.externArrayIdx     = idx
                        , C.externArrayIdxType = t    })
     = 
-    mkSBVFunc (mkExtArrFn name) ("/*test 002*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr idx) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/") mkSBVExpr
+    mkSBVFunc (mkExtArrFn name) mkSBVExpr
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
+      S.cgAddDecl [("/*test 002*/\n/*ACSL to write\n " ++ (PJ.render $ PP.ppExpr idx) ++ "\n*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args idx)
       W.SymWordInst <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
