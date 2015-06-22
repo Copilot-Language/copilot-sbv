@@ -38,6 +38,38 @@ copilot-sbv depends on the latest [SBV](http://hackage.haskell.org/package/sbv) 
 to generate hard real-time C code. It is recommanded to obtain it from the git 
 [repository](https://github.com/LeventErkok/sbv/), and compile it yourself (ghc 7.10 needed). 
 
+For the [ACSL](http://frama-c.com/acsl.html) , you need an up-to-date frama-c (Sodium), 
+and the value analysis plugin that goes with. Run to verify :
+	
+         make fval
+
+For compiling it with [CompCert](http://compcert.inria.fr/),
+you need to install it, install the Standard [C library](http://compcert.inria.fr/man/manual002.html) for it,
+wait until SBV allows you to change the compiler (or do it manually by changing the makefile generated), and
+run the following command :
+
+         make all
+
+There is also a [splint](http://www.splint.org/) support for the project. You need to install splint and run :
+
+         make splint
+
+More about ACSL
+==============
+copilot-sbv generates automatic ACSL contracts for all functions and for global variables (in the form of
+global invariants, which needs an up to date value analysis plugin for frama-c). The most important part of 
+generating contracts is transforming an expression about queues (such as drop 1 s1 + 3) into a ACSL contract.
+This is done by a pretty printer, which translates each construct of the language into its ACSL equivalent.
+However, some features are not implemented in the plugin yet, but are specified by ACSL (logical predicates ...).
+This may result in a verification status "unknown" for predicates containing these expressions. Some are not specified
+at all (asinh, ...), hence it compiles in a predicate that has to be user defined when implemented. 
+
+Casts are badly supported (unknown status), hence it is recommanded to avoid them. Remember, your computer has more than
+8kb of memory since 1980, use it !
+
+Floats are very badly supported by SBV (only constant floats can be operands of floating functions).
+Some issues are beeing fixed about that. 
+
 Resources
 =========
 [copilot-sbv](http://hackage.haskell.org/package/copilot-sbv) is available on
