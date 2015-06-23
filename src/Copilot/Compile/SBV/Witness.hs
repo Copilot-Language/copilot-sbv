@@ -14,6 +14,7 @@ module Copilot.Compile.SBV.Witness
   , OrdInst(..)           , ordInst 
   , MergeableInst(..)     , mergeableInst 
   , BitsInst(..)          , bitsInst 
+  , IntegralInst(..)      , integralInst 
   ) where
 
 import qualified Data.SBV as S
@@ -43,8 +44,8 @@ symWordInst t =
     C.Int32  -> SymWordInst ; C.Int64  -> SymWordInst
     C.Word8  -> SymWordInst ; C.Word16 -> SymWordInst
     C.Word32 -> SymWordInst ; C.Word64 -> SymWordInst
-    C.Float  -> SymWordInst ; C.Float  -> SymWordInst
-    C.Double -> SymWordInst ; C.Double -> SymWordInst
+    C.Float  -> SymWordInst
+    C.Double -> SymWordInst
 
 --------------------------------------------------------------------------------
 
@@ -58,8 +59,8 @@ numInst t =
     C.Int32  -> NumInst ; C.Int64  -> NumInst
     C.Word8  -> NumInst ; C.Word16 -> NumInst
     C.Word32 -> NumInst ; C.Word64 -> NumInst
-    C.Float  -> NumInst ; C.Float  -> NumInst
-    C.Double -> NumInst ; C.Double -> NumInst
+    C.Float  -> NumInst
+    C.Double -> NumInst
 
 --------------------------------------------------------------------------------
 
@@ -92,8 +93,8 @@ eqInst t =
     C.Int32  -> EqInst ; C.Int64  -> EqInst
     C.Word8  -> EqInst ; C.Word16 -> EqInst
     C.Word32 -> EqInst ; C.Word64 -> EqInst
-    C.Float  -> EqInst ; C.Float  -> EqInst
-    C.Double -> EqInst ; C.Double -> EqInst
+    C.Float  -> EqInst
+    C.Double -> EqInst
 
 --------------------------------------------------------------------------------
 
@@ -126,8 +127,8 @@ ordInst t =
     C.Int32  -> OrdInst ; C.Int64  -> OrdInst
     C.Word8  -> OrdInst ; C.Word16 -> OrdInst
     C.Word32 -> OrdInst ; C.Word64 -> OrdInst
-    C.Float  -> OrdInst ; C.Float  -> OrdInst
-    C.Double -> OrdInst ; C.Double -> OrdInst
+    C.Float  -> OrdInst 
+    C.Double -> OrdInst
 
 --------------------------------------------------------------------------------
 
@@ -141,8 +142,8 @@ mergeableInst t =
     C.Int32  -> MergeableInst ; C.Int64  -> MergeableInst
     C.Word8  -> MergeableInst ; C.Word16 -> MergeableInst
     C.Word32 -> MergeableInst ; C.Word64 -> MergeableInst
-    C.Float  -> MergeableInst ; C.Float -> MergeableInst
-    C.Double -> MergeableInst ; C.Double -> MergeableInst
+    C.Float  -> MergeableInst
+    C.Double -> MergeableInst
 
 --------------------------------------------------------------------------------
 
@@ -156,6 +157,21 @@ bitsInst t =
     C.Int32  -> BitsInst ; C.Int64  -> BitsInst
     C.Word8  -> BitsInst ; C.Word16 -> BitsInst
     C.Word32 -> BitsInst ; C.Word64 -> BitsInst
+    C.Float  -> badFloat
+    C.Double -> badFloat
+
+--------------------------------------------------------------------------------
+
+data IntegralInst a = S.SIntegral a => IntegralInst
+
+integralInst :: C.Type a -> IntegralInst a
+integralInst t =
+  case t of
+    C.Bool   -> badInst
+    C.Int8   -> IntegralInst ; C.Int16  -> IntegralInst
+    C.Int32  -> IntegralInst ; C.Int64  -> IntegralInst
+    C.Word8  -> IntegralInst ; C.Word16 -> IntegralInst
+    C.Word32 -> IntegralInst ; C.Word64 -> IntegralInst
     C.Float  -> badFloat
     C.Double -> badFloat
 
@@ -255,13 +271,13 @@ instance SBVCast Bool Word64 where
   sbvCast = castBool
 
 instance SBVCast Bool Int8 where
-  sbvCast = castErr 
+  sbvCast = castBool 
 instance SBVCast Bool Int16 where
-  sbvCast = castErr 
+  sbvCast = castBool 
 instance SBVCast Bool Int32 where
-  sbvCast = castErr 
+  sbvCast = castBool 
 instance SBVCast Bool Int64 where
-  sbvCast = castErr 
+  sbvCast = castBool 
 
 --------------------------------------------------------------------------------
 

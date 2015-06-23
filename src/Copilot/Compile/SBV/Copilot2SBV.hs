@@ -272,19 +272,25 @@ c2sOp2 op = case op of
   BwOr  t -> case W.bitsInst     t of W.BitsInst       -> (S..|.)
   BwXor t -> case W.bitsInst     t of W.BitsInst       -> (S.xor)
   BwShiftL tvec tidx -> 
-    case W.bitsInst tvec of 
-      W.BitsInst -> 
-        \vec idx -> case W.symWordInst tidx of
-                      W.SymWordInst -> case S.unliteral idx of
-                                         Nothing -> badUsage "Using the SBV backend, shiftL only supports constant shift indicies"
-                                         Just x  -> S.shiftL vec (fromIntegral x)
+    case W.integralInst tvec of 
+      W.IntegralInst -> 
+        \vec idx -> case (W.integralInst tidx) of
+                      W.IntegralInst -> S.sbvShiftLeft vec idx
+                                --case S.unliteral idx of
+                                 --        Nothing -> badUsage "Using the SBV backend, shiftL only supports constant shift indicies"
+                                 --        Just x  -> S.shiftL vec (fromIntegral x)
   BwShiftR tvec tidx -> 
-    case W.bitsInst tvec of 
-      W.BitsInst -> 
-        \vec idx -> case W.symWordInst tidx of
-                      W.SymWordInst -> case S.unliteral idx of
-                                         Nothing -> badUsage "Using the SBV backend, shiftR only supports constant shift indicies"
-                                         Just x  -> S.shiftR vec (fromIntegral x)
+    case W.integralInst tvec of 
+      W.IntegralInst -> 
+        \vec idx -> case (W.integralInst tidx) of
+                      W.IntegralInst -> S.sbvShiftRight vec idx
+
+--    case W.bitsInst tvec of 
+--      W.BitsInst -> 
+--        \vec idx -> case W.symWordInst tidx of
+--                      W.SymWordInst -> case S.unliteral idx of
+--                                         Nothing -> badUsage "Using the SBV backend, shiftR only supports constant shift indicies"
+--                                         Just x  -> S.shiftR vec (fromIntegral x)
 
   Fdiv  C.Float  -> case W.numInst         C.Float  of W.NumInst         -> (/)
   Fdiv  C.Double -> case W.numInst         C.Double of W.NumInst         -> (/)
