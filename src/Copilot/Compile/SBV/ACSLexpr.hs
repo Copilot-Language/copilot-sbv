@@ -45,8 +45,8 @@ ppExpr meta e0 = parens $ case e0 of
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
-  Local _ _ name e1 e2       -> text "(\\let" <+> (text name) <+> equals
-                                          <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2) <+> (text ")")
+  Local _ _ name e1 e2       -> text "\\let" <+> (text name) <+> equals
+                                          <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2)
   Var _ name                 -> (text name)
   Op1 op e                   -> ppOp1 op (ppExpr meta e)
   Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
@@ -59,7 +59,7 @@ ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
   Abs _    -> ppPrefix "\\abs"
-  Sign _   -> ppPrefix "\\signum"
+  Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : 0"))
   Recip _  -> ppPrefix "\\recip"
   Exp _    -> ppPrefix "\\exp"
   Sqrt _   -> ppPrefix "\\sqrt"
