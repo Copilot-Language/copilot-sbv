@@ -43,9 +43,11 @@ makefile params dir sbvName = do
                   , text "$@"
                   , archive])
   wr $ text "\nfval" <> colon 
-        <+> text ("\n\tframa-c -val -main step *.h *.c")
+        <+> text ("\n\tframa-c -val -main step *.h *.c | tee logval")
+  wr $ text "\nfwp" <> colon 
+        <+> text ("\n\tframa-c -wp -wp-out . -wp-prover Z3 -main testing *.h *.c | tee logwp")
   wr $ text "\nsplint" <> colon 
-        <+> text ("\n\tsplint -comment-char % *.h *.c")
+        <+> text ("\n\tsplint -comment-char % *.h *.c | tee logsplint")
 
   where 
   archive = text sbvName <> text ".a"

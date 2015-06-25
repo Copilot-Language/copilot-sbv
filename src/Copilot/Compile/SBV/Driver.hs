@@ -84,6 +84,8 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr copilot
   wr (text "")
   wr driverFn
+  wr (text "")
+  wr testFn
 
   where
   mkStyle :: Doc -> String
@@ -98,6 +100,11 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
             $$ mkFuncCall updateStatesF  [] <> semi
             $$ mkFuncCall updateBuffersF [] <> semi
             $$ mkFuncCall updatePtrsF    [] <> semi
+           )
+  testFn :: Doc
+  testFn =
+    mkFunc (withPrefix (prefix params) "testing")
+           (   text "for(;;) step()"<> semi
            )
 
   copilot = vcat $ intersperse (text "")
