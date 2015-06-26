@@ -66,7 +66,6 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr (text "/*" <+> text "Edit as you see fit" <+> text "*/")
   wr (text "")
 
-  wr (text "#include <stdint.h>")
   wr (text "#include" <+> doubleQuotes (text fileName <> text ".h"))
   wr (text "#include" <+> doubleQuotes (text $ c99HeaderName (prefix params)))
   wr (text "")
