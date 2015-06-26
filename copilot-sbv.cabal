@@ -56,4 +56,5 @@ library
                           , Copilot.Compile.SBV.Queue
                           , Copilot.Compile.SBV.Witness
                           , Copilot.Compile.SBV.Driver
+                          , Copilot.Compile.SBV.Transform
                           , Copilot.Compile.SBV.Makefile

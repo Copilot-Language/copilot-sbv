@@ -10,6 +10,7 @@ module Copilot.Compile.SBV
   ) where
 
 import qualified Copilot.Core as C
+import qualified Copilot.Core.PrettyPrint as C
 import Copilot.Compile.Header.C99 (c99HeaderName, genC99Header)
 
 import qualified Data.SBV as S
@@ -20,8 +21,10 @@ import Copilot.Compile.SBV.Code
   (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
+import qualified Copilot.Compile.SBV.Transform as T
 
 import System.FilePath (combine)
+import qualified Debug.Trace as DB
 
 --------------------------------------------------------------------------------
 
@@ -31,7 +34,7 @@ sbvDirName :: String
 sbvDirName = "copilot-sbv-codegen"
 
 compile :: Params -> C.Spec -> IO ()
-compile p s = compileWithSBV p [] s
+compile p s = compileWithSBV p [] (DB.trace (C.prettyPrint $ T.transform s) T.transform s)
 
 -- | sbvs are optional additional SBVCodeGens to generate.
 compileWithSBV :: Params -> [(String, S.SBVCodeGen ())] -> C.Spec -> IO ()
