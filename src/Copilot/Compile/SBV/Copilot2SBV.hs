@@ -191,6 +191,8 @@ c2sExpr_ e0 env inputs = case e0 of
     let res3 = c2sExpr_ e3 env inputs in
     c2sOp3 op res1 res2 res3
 
+  C.Label s e -> (c2sExpr_ e env inputs)
+
 --------------------------------------------------------------------------------      
 
 noFloatOpsErr :: String -> a

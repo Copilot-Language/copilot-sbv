@@ -51,6 +51,7 @@ ppExpr meta e0 = parens $ case e0 of
   Op1 op e                   -> ppOp1 op (ppExpr meta e)
   Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
   Op3 op e1 e2 e3            -> ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
+  Label s e                  -> (ppExpr meta e)
 
 ppUExpr :: MT.MetaTable -> UExpr -> Doc
 ppUExpr meta UExpr { uExprExpr = e0 } = ppExpr meta e0
@@ -58,7 +59,7 @@ ppUExpr meta UExpr { uExprExpr = e0 } = ppExpr meta e0
 ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
-  Abs _    -> ppPrefix "\\abs"
+  Abs _    -> \x -> ((parens $ x <> (text " > 0")) <> text "? " <> x <> text " : -" <> x )
   Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : 0"))
   Recip _  -> ppPrefix "\\recip"
   Exp _    -> ppPrefix "\\exp"
@@ -121,52 +122,4 @@ ppPrefix2 cs doc1 doc2 = parens $ text cs <+> doc1 <> text "," <+> doc2
 
 ppPrefix :: String -> Doc -> Doc
 ppPrefix cs doc = (text cs <+> lparen <> doc <> rparen)
-
---------------------------------------------------------------------------------
-{-
-ppStream :: Stream -> Doc
-ppStream
-  Stream
-    { streamId       = id
-    , streamBuffer   = buffer
-    , streamExpr     = e
-    , streamExprType = t
-    }
-      = (parens . text . showType) t
-          <+> strmName id 
-    <+> text "="
-    <+> text ("["
-              ++ ( concat $ intersperse "," 
-                              $ map (showWithType Haskell t) buffer )
-              ++ "]")
-    <+> text "++"
-    <+> ppExpr e
-
---------------------------------------------------------------------------------
-
-ppTrigger :: Trigger -> Doc
-ppTrigger
-  Trigger
-    { triggerName  = name
-    , triggerGuard = e
-    , triggerArgs  = args }
-  =   text "trigger" <+> text "\"" <> text name <> text "\""
-  <+> text "="
-  <+> ppExpr e
-  <+> lbrack
-  $$  (nest 2 $ vcat (punctuate comma $ 
-                          map (\a -> text "arg" <+> ppUExpr a) args))
-  $$  nest 2 rbrack
-
---------------------------------------------------------------------------------
-
-ppObserver :: Observer -> Doc
-ppObserver
-  Observer
-    { observerName     = name
-    , observerExpr     = e }
-  =   text "observer \"" <> text name <> text "\""
-  <+> text "="
-  <+> ppExpr e
--}
 
