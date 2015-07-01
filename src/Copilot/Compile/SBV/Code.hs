@@ -37,7 +37,7 @@ mkSBVFunc str codeGen = (str, codeGen)
 --------------------------------------------------------------------------------
 
 updateStates :: MetaTable -> C.Spec -> [SBVFunc]
-updateStates meta (C.Spec streams _ _ _) =
+updateStates meta (C.Spec streams _ _ _ _) =
   map updateStreamState streams
 
   where
@@ -63,7 +63,7 @@ updateStates meta (C.Spec streams _ _ _) =
 --------------------------------------------------------------------------------
 
 updateObservers :: MetaTable -> C.Spec -> [SBVFunc]
-updateObservers meta (C.Spec _ observers _ _) =
+updateObservers meta (C.Spec _ observers _ _ _) =
   map updateObs observers
 
   where
@@ -85,7 +85,7 @@ updateObservers meta (C.Spec _ observers _ _) =
 --------------------------------------------------------------------------------
 
 fireTriggers :: MetaTable -> C.Spec -> [SBVFunc]
-fireTriggers meta (C.Spec _ _ triggers _) =
+fireTriggers meta (C.Spec _ _ triggers _ _) =
   concatMap fireTrig triggers
 
   where
