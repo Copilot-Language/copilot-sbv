@@ -214,7 +214,7 @@ mkInputs meta args =
     mkExtInput C.ExtArray { C.externArrayElemType = t }
       = do
       v <- mkExtInput_ t (mkExtTmpTag name (Just tag))
-      return acc { extArrs = (name, ExtInput 
+      return acc { extArrs = ((mkExtTmpTag name (Just tag)), ExtInput 
                                       { extInput  = v
                                       , extType   = t }
                              ) : extArrs acc }
@@ -232,7 +232,7 @@ mkInputs meta args =
     mkExtInput C.ExtFun { C.externFunType = t }
       = do
       v <- mkExtInput_ t (mkExtTmpTag name (Just tag))
-      return acc { extFuns = (name, ExtInput 
+      return acc { extFuns = ((mkExtTmpTag name (Just tag)), ExtInput 
                                       { extInput = v
                                       , extType  = t }
                              ) : extFuns acc }

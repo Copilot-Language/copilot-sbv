@@ -22,6 +22,7 @@ import qualified Data.Map as M
 import qualified Data.SBV as S
 --import qualified Data.SBV.Internals as S
 
+import Copilot.Compile.SBV.Common
 import qualified Copilot.Compile.SBV.Queue as Q
 import qualified Copilot.Compile.SBV.Witness as W
 
@@ -144,12 +145,12 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternArray _ t name _ _ _ _ -> 
+  C.ExternArray _ t name _ _ _ tag -> 
     getSBV t getExtArr
 
     where 
     getExtArr :: ExtInput
-    getExtArr = lookupInput name (extArrs inputs)
+    getExtArr = lookupInput (mkExtTmpTag name (tag)) (extArrs inputs)
 
     getSBV t1 ExtInput { extInput  = v
                        , extType = t2 }
@@ -158,12 +159,12 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternFun t name _ _ _ ->
+  C.ExternFun t name _ _ tag ->
     getSBV t getExtFun
 
     where
     getExtFun :: ExtInput
-    getExtFun = lookupInput name (extFuns inputs)
+    getExtFun = lookupInput (mkExtTmpTag name (tag)) (extFuns inputs)
 
     getSBV t1 ExtInput { extType  = t2
                        , extInput = v }
