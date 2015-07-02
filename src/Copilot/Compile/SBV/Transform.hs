@@ -166,7 +166,7 @@ transformExpr e0 = case e0 of
   Op2 op e1 e2                   -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3
 
-  Label s e                      -> Label s $ transformExpr e
+  Label t s e                    -> Label t s $ transformExpr e
 
 
 

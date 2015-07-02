@@ -2,7 +2,7 @@
 -- Copyright © 2011 National Institute of Aerospace / Galois, Inc.
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE GADTs, ExistentialQuantification #-}
+{-# LANGUAGE GADTs, ExistentialQuantification, ScopedTypeVariables #-}
 
 module Copilot.Compile.SBV.Copilot2SBV
   ( c2sExpr
@@ -28,6 +28,7 @@ import qualified Copilot.Compile.SBV.Witness as W
 
 import Copilot.Core (Op1 (..), Op2 (..), Op3 (..), badUsage)
 import qualified Copilot.Core as C
+import qualified Copilot.Core.Type as C
 import Copilot.Core.Error (impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 
@@ -192,7 +193,8 @@ c2sExpr_ e0 env inputs = case e0 of
     let res3 = c2sExpr_ e3 env inputs in
     c2sOp3 op res1 res2 res3
 
-  C.Label s e -> (c2sExpr_ e env inputs)
+  C.Label t s e -> case W.symWordInst t of 
+                       W.SymWordInst -> S.label s (c2sExpr_ e env inputs)
 
 --------------------------------------------------------------------------------      
 

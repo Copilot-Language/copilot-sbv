@@ -51,7 +51,7 @@ ppExpr meta e0 = parens $ case e0 of
   Op1 op e                   -> ppOp1 op (ppExpr meta e)
   Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
   Op3 op e1 e2 e3            -> ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
-  Label s e                  -> (ppExpr meta e)
+  Label t s e                -> (ppExpr meta e)
 
 ppUExpr :: MT.MetaTable -> UExpr -> Doc
 ppUExpr meta UExpr { uExprExpr = e0 } = ppExpr meta e0
