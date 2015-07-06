@@ -176,7 +176,7 @@ transformOp1 op e = case op of
   Not          -> Op1 Not $ transformExpr e
   -- Numeric operators.
   Abs   t      -> Op1 (Abs t) $ transformExpr e
-  Sign  t      -> Op1 (Sign t) $ transformExpr e    -- FIXME !!!!
+  Sign  t      -> Op1 (Sign t) $ transformExpr e
   -- Fractional operators.
   Recip a      -> Op2 (Fdiv a) (Const a 1.0) (transformExpr e)
   -- Floating operators.
