@@ -81,6 +81,20 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr (text "")
 
   wr copilot
+  
+  wr (text "/* Idents */\n")
+  wr (text "/*@\n assigns \\nothing;\n */\nSBool ident_bool(SBool a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSWord8 ident_word8(SWord8 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSWord16 ident_word16(SWord16 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSWord32 ident_word32(SWord32 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSWord64 ident_word64(SWord64 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSInt8 ident_int8(SInt8 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSInt16 ident_int16(SInt16 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSInt32 ident_int32(SInt32 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSInt64 ident_int64(SInt64 a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSFloat ident_float(SFloat a) {return a;}")
+  wr (text "/*@\n assigns \\nothing;\n */\nSDouble ident_double(SDouble a) {return a;}")
+
   wr (text "")
   wr driverFn
   wr (text "")

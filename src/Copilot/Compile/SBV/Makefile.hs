@@ -45,7 +45,7 @@ makefile params dir sbvName = do
   wr $ text "\nfval" <> colon 
         <+> text ("\n\tframa-c -val -main testing -slevel 10000000 *.h *.c | tee logval")
   wr $ text "\nfwp" <> colon 
-        <+> text ("\n\tframa-c -wp -wp-out . -wp-prover Z3 -wp-split -main testing *.h *.c | tee logwp")
+        <+> text ("\n\tframa-c -wp -wp-out . -wp-prover Z3 -main testing *.h *.c | tee logwp")
   wr $ text "\nsplint" <> colon 
         <+> text ("\n\tsplint -comment-char % *.h *.c | tee logsplint")
 

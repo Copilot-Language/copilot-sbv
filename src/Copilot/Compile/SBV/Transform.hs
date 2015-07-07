@@ -20,6 +20,7 @@ import qualified Copilot.Compile.SBV.Queue as Q
 import qualified Copilot.Compile.SBV.Witness as W
 
 import Copilot.Core
+import Copilot.Core.Type
 import Copilot.Core.Error (impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 
@@ -166,16 +167,31 @@ transformExpr e0 = case e0 of
   Op2 op e1 e2                   -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3
 
-  Label t s e                    -> Label t s $ transformExpr e
+  Label t s e                    -> case s of 
+    '?':m -> ExternFun t ("ident_"++(showType t)) [UExpr {uExprExpr = Label t m $ transformExpr e, uExprType = t}] Nothing Nothing
+    _     -> Label t s $ transformExpr e
+    
 
-
+showType :: Type a -> String
+showType t = case t of
+  Bool  -> "bool"
+  Int8  -> "int8"
+  Int16 -> "int16"
+  Int32 -> "int32"
+  Int64 -> "int64"
+  Word8 -> "word8"
+  Word16-> "word16"
+  Word32-> "word32"
+  Word64-> "word64"
+  Float -> "float"
+  Double-> "double"
 
 transformOp1 :: Op1 a b -> Expr a -> Expr b
 transformOp1 op e = case op of
     -- Boolean operators.
   Not          -> Op1 Not $ transformExpr e
   -- Numeric operators.
-  Abs   t      -> Op1 (Abs t) $ transformExpr e
+  Abs   t      -> Op2 (Mul t) (transformExpr e) (transformExpr $ Label t "?absolute_value_splitting" $ Op1 (Sign t) $ e)
   Sign  t      -> Op1 (Sign t) $ transformExpr e
   -- Fractional operators.
   Recip a      -> Op2 (Fdiv a) (Const a 1.0) (transformExpr e)
