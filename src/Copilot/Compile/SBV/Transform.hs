@@ -189,7 +189,7 @@ transformOp1 op e = case op of
     -- Boolean operators.
   Not          -> Op1 Not $ transformExpr e
   -- Numeric operators.
-  Abs   t      -> Op2 (Mul t) (transformExpr e) (transformExpr $ Label t "?absolute_value_splitting" $ Op1 (Sign t) $ e)
+  Abs   t      -> Op1 (Abs t) (transformExpr e)
   Sign  t      -> Op1 (Sign t) $ transformExpr e
   -- Fractional operators.
   Recip a      -> Op2 (Fdiv a) (Const a 1.0) (transformExpr e)
