@@ -299,5 +299,4 @@ transformOp2 op e1 e2 = case op of
 
 transformOp3 :: Op3 a b c d -> Expr a -> Expr b -> Expr c -> Expr d
 transformOp3 op e1 e2 e3 = case op of 
-  Mux   Bool   -> Op2 Or (transformExpr $ Op2 And (e2) (e1)) (transformExpr $ Op2 And (e3) (Op1 Not e1))
   Mux   t      -> Op3 (Mux t) (transformExpr e1) (transformExpr e2) (transformExpr e3) 
