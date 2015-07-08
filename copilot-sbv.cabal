@@ -48,6 +48,7 @@ library
 
   exposed-modules         : Copilot.Compile.SBV
                           , Copilot.Compile.SBV.ACSLexpr
+                          , Copilot.Compile.SBV.ACSLproof
                           , Copilot.Compile.SBV.Code
                           , Copilot.Compile.SBV.Common
                           , Copilot.Compile.SBV.Copilot2SBV

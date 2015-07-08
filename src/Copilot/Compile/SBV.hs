@@ -4,6 +4,7 @@
 
 module Copilot.Compile.SBV
   ( compile
+  , proofACSL
   , compileWithSBV
   , sbvDirName
   , module Copilot.Compile.SBV.Params
@@ -22,6 +23,7 @@ import Copilot.Compile.SBV.Code
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
 import qualified Copilot.Compile.SBV.Transform as T
+import qualified Copilot.Compile.SBV.ACSLproof as T
 
 import System.FilePath (combine)
 import qualified Debug.Trace as DB
@@ -33,8 +35,11 @@ import qualified Debug.Trace as DB
 sbvDirName :: String
 sbvDirName = "copilot-sbv-codegen"
 
+proofACSL :: Params -> C.Spec -> IO ()
+proofACSL p s = compileWithSBV p [] (DB.trace (C.prettyPrint $ (T.transformProofACSL s)) (T.transformProofACSL s))
+
 compile :: Params -> C.Spec -> IO ()
-compile p s = compileWithSBV p [] (DB.trace (C.prettyPrint $ T.transform s) T.transform s)
+compile p s = compileWithSBV p [] (T.transform s)
 
 -- | sbvs are optional additional SBVCodeGens to generate.
 compileWithSBV :: Params -> [(String, S.SBVCodeGen ())] -> C.Spec -> IO ()

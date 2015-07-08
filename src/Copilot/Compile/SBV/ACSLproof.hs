@@ -4,8 +4,8 @@
 
 {-# LANGUAGE GADTs, ExistentialQuantification #-}
 
-module Copilot.Compile.SBV.Transform
-  ( transform
+module Copilot.Compile.SBV.ACSLproof
+  ( transformProofACSL
   ) 
 where
 
@@ -107,8 +107,8 @@ transformProperty Property
 --  , specTriggers     :: [Trigger]
 --  , specProperties   :: [Property] }
 
-transform :: Spec -> Spec
-transform Spec
+transformProofACSL :: Spec -> Spec
+transformProofACSL Spec
     { specStreams    = strms
     , specObservers  = obsvs
     , specTriggers   = trigs
@@ -167,7 +167,9 @@ transformExpr e0 = case e0 of
   Op2 op e1 e2                   -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3
 
-  Label t s e                    -> Label t s $ transformExpr e
+  Label t s e                    -> case s of 
+    '?':m -> ExternFun t ("ident_"++(showType t)) [UExpr {uExprExpr = Label t m $ transformExpr e, uExprType = t}] Nothing Nothing
+    _     -> Label t s $ transformExpr e
     
 
 showType :: Type a -> String
