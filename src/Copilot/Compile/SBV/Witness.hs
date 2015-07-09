@@ -354,9 +354,9 @@ instance SBVCast Word8 Int64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Word8 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Word8 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -379,9 +379,9 @@ instance SBVCast Word16 Int64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Word16 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Word16 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -404,9 +404,9 @@ instance SBVCast Word32 Int64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Word32 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Word32 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -429,9 +429,9 @@ instance SBVCast Word64 Int64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Word64 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Word64 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -454,9 +454,9 @@ instance SBVCast Int8 Word64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Int8 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Int8 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -479,9 +479,9 @@ instance SBVCast Int16 Word64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Int16 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Int16 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -504,9 +504,9 @@ instance SBVCast Int32 Word64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Int32 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Int32 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
@@ -529,9 +529,9 @@ instance SBVCast Int64 Word64 where
   sbvCast = S.sFromIntegral 
 
 instance SBVCast Int64 Float where
-  sbvCast = S.toSFloat S.sRoundTowardZero
+  sbvCast = S.toSFloat S.sRoundNearestTiesToEven
 instance SBVCast Int64 Double where
-  sbvCast = S.toSDouble S.sRoundTowardZero
+  sbvCast = S.toSDouble S.sRoundNearestTiesToEven
 
 --------------------------------------------------------------------------------
 
