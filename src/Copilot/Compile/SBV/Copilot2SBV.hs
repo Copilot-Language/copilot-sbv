@@ -280,7 +280,7 @@ c2sOp2 op = case op of
     case W.integralInst tvec of 
       W.IntegralInst -> 
         \vec idx -> case (W.integralInst tidx) of
-                      W.IntegralInst -> S.sbvShiftLeft vec idx
+                      W.IntegralInst -> S.sShiftLeft vec idx
                                 --case S.unliteral idx of
                                  --        Nothing -> badUsage "Using the SBV backend, shiftL only supports constant shift indicies"
                                  --        Just x  -> S.shiftL vec (fromIntegral x)
@@ -288,7 +288,7 @@ c2sOp2 op = case op of
     case W.integralInst tvec of 
       W.IntegralInst -> 
         \vec idx -> case (W.integralInst tidx) of
-                      W.IntegralInst -> S.sbvShiftRight vec idx
+                      W.IntegralInst -> S.sShiftRight vec idx
 
 --    case W.bitsInst tvec of 
 --      W.BitsInst -> 

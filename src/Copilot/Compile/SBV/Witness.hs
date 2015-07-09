@@ -284,11 +284,11 @@ instance SBVCast Bool Int64 where
 instance SBVCast Word8 Word8 where
   sbvCast = id
 instance SBVCast Word8 Word16 where
-  sbvCast = S.extend
+  sbvCast = S.sFromIntegral
 instance SBVCast Word8 Word32 where
-  sbvCast = S.extend . S.extend
+  sbvCast = S.sFromIntegral
 instance SBVCast Word8 Word64 where
-  sbvCast = S.extend . S.extend . S.extend
+  sbvCast = S.sFromIntegral
 
 instance SBVCast Word8 Int16 where
   sbvCast = castErr 
@@ -302,24 +302,24 @@ instance SBVCast Word8 Int64 where
 instance SBVCast Word16 Word16 where
   sbvCast = id
 instance SBVCast Word16 Word32 where
-  sbvCast = S.extend
+  sbvCast = S.sFromIntegral
 instance SBVCast Word16 Word64 where
-  sbvCast = S.extend . S.extend
+  sbvCast = S.sFromIntegral
 
 instance SBVCast Word16 Int32 where
-  sbvCast = S.signCast . S.extend 
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Int64 where
-  sbvCast = S.signCast . S.extend . S.extend 
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
 instance SBVCast Word32 Word32 where
   sbvCast = id
 instance SBVCast Word32 Word64 where
-  sbvCast = S.extend
+  sbvCast = S.sFromIntegral
 
 instance SBVCast Word32 Int64 where
-  sbvCast = S.signCast . S.extend 
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
@@ -342,16 +342,16 @@ instance SBVCast Int8 Int64 where
 instance SBVCast Int16 Int16 where
   sbvCast = id 
 instance SBVCast Int16 Int32 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 instance SBVCast Int16 Int64 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
 instance SBVCast Int32 Int32 where
   sbvCast = id 
 instance SBVCast Int32 Int64 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
