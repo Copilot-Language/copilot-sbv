@@ -199,42 +199,80 @@ castInst t0 t1 =
                   C.Word16  -> CastInst
                   C.Word32  -> CastInst
                   C.Word64  -> CastInst
+                  C.Int8    -> CastInst
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Word16 -> case t1 of
+                  C.Word8   -> CastInst
                   C.Word16  -> CastInst
                   C.Word32  -> CastInst
                   C.Word64  -> CastInst
+                  C.Int8    -> CastInst
+                  C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Word32 -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
                   C.Word32  -> CastInst
                   C.Word64  -> CastInst
+                  C.Int8    -> CastInst
+                  C.Int16   -> CastInst
+                  C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Word64 -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
+                  C.Word32  -> CastInst
                   C.Word64  -> CastInst
+                  C.Int8    -> CastInst
+                  C.Int16   -> CastInst
+                  C.Int32   -> CastInst
+                  C.Int64   -> CastInst
                   _         -> badInst
 
     C.Int8   -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
+                  C.Word32  -> CastInst
+                  C.Word64  -> CastInst
                   C.Int8    -> CastInst
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Int16  -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
+                  C.Word32  -> CastInst
+                  C.Word64  -> CastInst
+                  C.Int8    -> CastInst
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Int32  -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
+                  C.Word32  -> CastInst
+                  C.Word64  -> CastInst
+                  C.Int8    -> CastInst
+                  C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Int64  -> case t1 of
+                  C.Word8   -> CastInst
+                  C.Word16  -> CastInst
+                  C.Word32  -> CastInst
+                  C.Word64  -> CastInst
+                  C.Int8    -> CastInst
+                  C.Int16   -> CastInst
+                  C.Int32   -> CastInst
                   C.Int64   -> CastInst
                   _         -> badInst
     C.Float  -> badInst
@@ -282,7 +320,7 @@ instance SBVCast Bool Int64 where
 --------------------------------------------------------------------------------
 
 instance SBVCast Word8 Word8 where
-  sbvCast = id
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word8 Word16 where
   sbvCast = S.sFromIntegral
 instance SBVCast Word8 Word32 where
@@ -290,22 +328,30 @@ instance SBVCast Word8 Word32 where
 instance SBVCast Word8 Word64 where
   sbvCast = S.sFromIntegral
 
+instance SBVCast Word8 Int8 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word8 Int16 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word8 Int32 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word8 Int64 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
+instance SBVCast Word16 Word8 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Word16 where
-  sbvCast = id
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Word32 where
   sbvCast = S.sFromIntegral
 instance SBVCast Word16 Word64 where
   sbvCast = S.sFromIntegral
 
+instance SBVCast Word16 Int8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word16 Int16 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Int32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Int64 where
@@ -313,50 +359,120 @@ instance SBVCast Word16 Int64 where
 
 --------------------------------------------------------------------------------
 
+instance SBVCast Word32 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word32 Word16 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word32 Word32 where
-  sbvCast = id
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word32 Word64 where
   sbvCast = S.sFromIntegral
 
+instance SBVCast Word32 Int8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word32 Int16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word32 Int32 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word32 Int64 where
   sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
+instance SBVCast Word64 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word64 Word16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word64 Word32 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Word64 Word64 where
-  sbvCast = id
+  sbvCast = S.sFromIntegral 
+
+instance SBVCast Word64 Int8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word64 Int16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word64 Int32 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Word64 Int64 where
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
 instance SBVCast Int8 Int8 where
-  sbvCast = id 
+  sbvCast = S.sFromIntegral 
 instance SBVCast Int8 Int16 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral  
 instance SBVCast Int8 Int32 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral  
 instance SBVCast Int8 Int64 where
-  sbvCast = castErr 
+  sbvCast = S.sFromIntegral  
+
+instance SBVCast Int8 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int8 Word16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int8 Word32 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int8 Word64 where
+  sbvCast = S.sFromIntegral 
 
 --------------------------------------------------------------------------------
 
+instance SBVCast Int16 Int8 where
+  sbvCast = S.sFromIntegral 
 instance SBVCast Int16 Int16 where
-  sbvCast = id 
+  sbvCast = S.sFromIntegral  
 instance SBVCast Int16 Int32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Int16 Int64 where
   sbvCast = S.sFromIntegral 
 
+instance SBVCast Int16 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int16 Word16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int16 Word32 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int16 Word64 where
+  sbvCast = S.sFromIntegral 
 --------------------------------------------------------------------------------
 
+instance SBVCast Int32 Int8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int32 Int16 where
+  sbvCast = S.sFromIntegral  
 instance SBVCast Int32 Int32 where
-  sbvCast = id 
+  sbvCast = S.sFromIntegral
 instance SBVCast Int32 Int64 where
   sbvCast = S.sFromIntegral 
 
+instance SBVCast Int32 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int32 Word16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int32 Word32 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int32 Word64 where
+  sbvCast = S.sFromIntegral 
 --------------------------------------------------------------------------------
 
+instance SBVCast Int64 Int8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int64 Int16 where
+  sbvCast = S.sFromIntegral  
+instance SBVCast Int64 Int32 where
+  sbvCast = S.sFromIntegral
 instance SBVCast Int64 Int64 where
-  sbvCast = id 
+  sbvCast = S.sFromIntegral
 
+instance SBVCast Int64 Word8 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int64 Word16 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int64 Word32 where
+  sbvCast = S.sFromIntegral 
+instance SBVCast Int64 Word64 where
+  sbvCast = S.sFromIntegral 
 --------------------------------------------------------------------------------
 
