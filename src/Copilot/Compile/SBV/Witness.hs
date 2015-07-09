@@ -203,6 +203,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Word16 -> case t1 of
                   C.Word8   -> CastInst
@@ -213,6 +215,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Word32 -> case t1 of
                   C.Word8   -> CastInst
@@ -223,6 +227,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Word64 -> case t1 of
                   C.Word8   -> CastInst
@@ -233,6 +239,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
 
     C.Int8   -> case t1 of
@@ -244,6 +252,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Int16  -> case t1 of
                   C.Word8   -> CastInst
@@ -254,6 +264,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Int32  -> case t1 of
                   C.Word8   -> CastInst
@@ -264,6 +276,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Int64  -> case t1 of
                   C.Word8   -> CastInst
@@ -274,6 +288,8 @@ castInst t0 t1 =
                   C.Int16   -> CastInst
                   C.Int32   -> CastInst
                   C.Int64   -> CastInst
+                  C.Float   -> CastInst
+                  C.Double   -> CastInst
                   _         -> badInst
     C.Float  -> badInst
     C.Double -> badInst
@@ -337,6 +353,11 @@ instance SBVCast Word8 Int32 where
 instance SBVCast Word8 Int64 where
   sbvCast = S.sFromIntegral 
 
+instance SBVCast Word8 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Word8 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
 
 instance SBVCast Word16 Word8 where
@@ -356,6 +377,11 @@ instance SBVCast Word16 Int32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Word16 Int64 where
   sbvCast = S.sFromIntegral 
+
+instance SBVCast Word16 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Word16 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
 
 --------------------------------------------------------------------------------
 
@@ -377,6 +403,11 @@ instance SBVCast Word32 Int32 where
 instance SBVCast Word32 Int64 where
   sbvCast = S.sFromIntegral 
 
+instance SBVCast Word32 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Word32 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
 
 instance SBVCast Word64 Word8 where
@@ -396,6 +427,11 @@ instance SBVCast Word64 Int32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Word64 Int64 where
   sbvCast = S.sFromIntegral 
+
+instance SBVCast Word64 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Word64 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
 
 --------------------------------------------------------------------------------
 
@@ -417,6 +453,11 @@ instance SBVCast Int8 Word32 where
 instance SBVCast Int8 Word64 where
   sbvCast = S.sFromIntegral 
 
+instance SBVCast Int8 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Int8 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
 
 instance SBVCast Int16 Int8 where
@@ -436,6 +477,12 @@ instance SBVCast Int16 Word32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Int16 Word64 where
   sbvCast = S.sFromIntegral 
+
+instance SBVCast Int16 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Int16 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
 
 instance SBVCast Int32 Int8 where
@@ -455,6 +502,12 @@ instance SBVCast Int32 Word32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Int32 Word64 where
   sbvCast = S.sFromIntegral 
+
+instance SBVCast Int32 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Int32 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
 
 instance SBVCast Int64 Int8 where
@@ -474,5 +527,13 @@ instance SBVCast Int64 Word32 where
   sbvCast = S.sFromIntegral 
 instance SBVCast Int64 Word64 where
   sbvCast = S.sFromIntegral 
+
+instance SBVCast Int64 Float where
+  sbvCast = S.toSFloat S.sRoundTowardZero
+instance SBVCast Int64 Double where
+  sbvCast = S.toSDouble S.sRoundTowardZero
+
 --------------------------------------------------------------------------------
+
+
 
