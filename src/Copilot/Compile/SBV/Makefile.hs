@@ -30,7 +30,7 @@ makefile params dir sbvName = do
   wr (text "a")
   removeFile filePath
   wr (text "# Makefile rules for the Copilot driver.")
-  wr (text "\n#CCFLAGS= -std=c99 -Werror -Wall -Wextra -Wbad-function-cast -Wcast-align -Wcast-qual -Wconversion -Wdisabled-optimization -Wformat=2 -Winit-self -Winline -Wnested-externs -Wold-style-definition -Wpointer-arith -Wredundant-decls -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wundef -Wwrite-strings -Wshadow -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-label -O2 -march=native  -c\nCCFLAGS= \nCC=ccomp")
+  wr (text "\nCCFLAGS=-fnone \nCC=ccomp")
   wr (text "")
   wr $ text "driver" <> colon 
         <+> text (driverName params) <+> text (withPre fileName) <> text ".h" 
