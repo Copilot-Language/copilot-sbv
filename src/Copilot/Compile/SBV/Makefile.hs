@@ -45,7 +45,7 @@ makefile params dir sbvName = do
   wr $ text "\nfval" <> colon 
         <+> text ("\n\tframa-c -val -main testing -slevel 10000000 *.h *.c | tee logval")
   wr $ text "\nfwp" <> colon 
-        <+> text ("\n\tframa-c -wp -wp-out . -wp-prover CVC4 -wp-split *.h *.c | tee logwp")
+        <+> text ("\n\tparallel frama-c -wp -wp-out . -wp-prover CVC4 -wp-split {} ::: *.c | tee >logfwp >(grep 'Proved\\|Unknown\\|Failed\\|Parsing .*\\.c' > logfwpcompact) >(grep 'Proved\\|Unknown\\|Failed\\|Parsing .*\\.c')")
   wr $ text "\nsplint" <> colon 
         <+> text ("\n\tsplint -comment-char % *.h *.c | tee logsplint")
 
