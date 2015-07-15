@@ -34,7 +34,14 @@ ptrName id = text "ptr_" <> int id
 ppExpr :: MT.MetaTable -> Expr a -> Doc
 ppExpr meta e0 = parens $ case e0 of
   Const t x                  -> text (showWithType Haskell t x)
-  Drop _ 0 id                -> strmName id <> lbrack <> (ptrName id) <> rbrack
+  Drop _ 0 id                -> 
+        let aa = M.lookup id (MT.streamInfoMap meta)
+        in case aa of
+          Just Stream { streamBuffer = ll } -> 
+            let streamSize = (length ll) in
+            case streamSize of 
+              1 -> strmName id <> lbrack <> (text "0") <> rbrack
+              _ -> strmName id <> lbrack <> (ptrName id) <> rbrack
   Drop _ i id                -> 
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
