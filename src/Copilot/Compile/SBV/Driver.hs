@@ -77,7 +77,7 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr (text "/* Variables */")
 
   wr (varDecls meta)
-  wr (writeACSLqueues meta)
+--  wr (writeACSLqueues meta)
   wr (text "")
 
   wr copilot
@@ -237,15 +237,16 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extFDecl ++ extVars ++ extArrs ++ extFuns))
+  --extACSL $$ 
+  (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extFDecl ++ extVars ++ extArrs ++ extFuns))
 
   where
-  ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
-  extACSL = vcat [text "/*@",
-			(case ll of 
-  			[] -> text " assigns \\nothing;"
-			_ -> vcat $ ll)
-			,text "*/"]
+  --ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
+  --extACSL = vcat [text "/*@",
+--			(case ll of 
+  --			[] -> text " assigns \\nothing;"
+--			_ -> vcat $ ll)
+--			,text "*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
   extADecl = map sampleAExt1 (M.toList extAMap)
   extFDecl = map sampleFExt1 (M.toList extFMap)
@@ -417,7 +418,7 @@ updateObservers params MetaTable { observerInfoMap = observers }
 
 fireTriggers :: MetaTable -> Doc
 fireTriggers MetaTable { triggerInfoMap = triggers } 
-  = text "/*@\n assigns \\nothing; \n*/" $$
+  = -- text "/*@\n assigns \\nothing; \n*/" $$
   (mkFunc ("static " ++ triggersF) $ vcat $ map fireTrig (M.toList triggers))
 
   where
