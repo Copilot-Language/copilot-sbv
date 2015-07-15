@@ -163,6 +163,8 @@ transformExpr e0 = case e0 of
   ExternFun t name args contxt yy-> ExternFun t name (map transformUExpr args) contxt yy
   ExternArray t1 t2 name 
               size idx context yy-> ExternArray t1 t2 name size (transformExpr idx) context yy
+  ExternStruct t name sargs yy   -> ExternStruct t name (map transformUExpr sargs) yy
+  GetField t id name             -> GetField t id name
   Op1 op e                       -> transformOp1 op e
   Op2 op e1 e2                   -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3

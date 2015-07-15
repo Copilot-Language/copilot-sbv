@@ -35,6 +35,7 @@ import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 --------------------------------------------------------------------------------
 
 type Ext = (C.Name, ExtInput)
+--type ExtStr = (C.Name, ExtStruct)
 type ExtQue = (C.Id, QueInput)
 
 -- These are all the inputs to the to the SBV expression we're building.
@@ -42,12 +43,18 @@ data Inputs = Inputs
   { extVars  :: [Ext] -- external variables
   , extArrs  :: [Ext] -- external arrays
   , extFuns  :: [Ext] -- external functions
+  , extStrs  :: [Ext{-Str-}] -- structs
   , extQues  :: [ExtQue] }
 
 -- External input -- variables, arrays, and functions
 data ExtInput = forall a. ExtInput 
   { extInput :: S.SBV a
   , extType  :: C.Type a }
+
+-- Structs
+{-data ExtStruct = forall a. ExtStruct
+  { extStruct :: S.SBV a
+  , extFields :: [Ext] }-}
 
 -- Stream queues
 data QueInput = forall a. QueInput 
@@ -172,6 +179,19 @@ c2sExpr_ e0 env inputs = case e0 of
       = let Just p = t2 =~= t1 in
         coerce (cong p) v
  
+  ----------------------------------------------------
+{-
+  C.ExternStruct t name _ tag ->
+    getSBV t getExtStr
+
+    where
+    getExtStr :: ExtStruct
+    getExtStr = lookupInput (mkExtTmpTag name (tag)) (extStrs inputs)
+
+    getSBV t1 ExtStruct { extStruct = v }
+      = let Just p = C.Bool =~= C.Bool in
+        coerce (cong p) v
+-}
   ----------------------------------------------------
 
   C.Op1 op e ->

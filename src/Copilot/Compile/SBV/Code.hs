@@ -41,7 +41,7 @@ mkSBVFunc str codeGen = (str, codeGen)
 --------------------------------------------------------------------------------
 
 updateStates :: MetaTable -> C.Spec -> [SBVFunc]
-updateStates meta (C.Spec streams _ _ _ _) =
+updateStates meta (C.Spec streams _ _ _) =
   map updateStreamState streams
 
   where
@@ -69,7 +69,7 @@ updateStates meta (C.Spec streams _ _ _ _) =
 --------------------------------------------------------------------------------
 
 updateObservers :: MetaTable -> C.Spec -> [SBVFunc]
-updateObservers meta (C.Spec _ observers _ _ _) =
+updateObservers meta (C.Spec _ observers _ _) =
   map updateObs observers
 
   where
@@ -92,7 +92,7 @@ updateObservers meta (C.Spec _ observers _ _ _) =
 --------------------------------------------------------------------------------
 
 fireTriggers :: MetaTable -> C.Spec -> [SBVFunc]
-fireTriggers meta (C.Spec _ _ triggers _ _) =
+fireTriggers meta (C.Spec _ _ triggers _) =
   concatMap fireTrig triggers
 
   where
@@ -180,7 +180,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 
 mkInputs :: MetaTable -> [Arg] -> S.SBVCodeGen Inputs
 mkInputs meta args = 
-  foldM argToInput (Inputs [] [] [] []) args 
+  foldM argToInput (Inputs [] [] [] [] []) args 
 
   where
   argToInput :: Inputs -> Arg -> S.SBVCodeGen Inputs
@@ -236,6 +236,24 @@ mkInputs meta args =
                                       { extInput = v
                                       , extType  = t }
                              ) : extFuns acc }
+
+  -----------------------------------------
+
+  -- Structs
+  argToInput acc (ExternStruct name tag) =
+    let extInfos = externStrInfoMap meta in
+    let Just extInfo = M.lookup tag extInfos in
+    mkExtInput extInfo
+
+    where
+    mkExtInput :: C.ExtStruct -> S.SBVCodeGen Inputs
+    mkExtInput C.ExtStruct { }
+      = do
+      v <- mkExtInput_ C.Bool (mkExtTmpTag name (Just tag))
+      return acc { extStrs = ((mkExtTmpTag name (Just tag)), ExtInput
+                                      { extInput = v
+                                      , extType  = C.Bool }
+                             ) : extStrs acc }
 
   -----------------------------------------
 
