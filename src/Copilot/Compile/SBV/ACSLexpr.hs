@@ -67,7 +67,7 @@ ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
   Abs _    -> \x -> ((parens $ x <> (text " > 0")) <> text "? " <> x <> text " : -" <> x )
-  Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : 0"))
+  Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : ") <> x)
   Recip _  -> ppPrefix "\\recip"
   Exp _    -> ppPrefix "\\exp"
   Sqrt _   -> ppPrefix "\\sqrt"
