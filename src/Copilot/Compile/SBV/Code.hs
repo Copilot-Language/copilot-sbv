@@ -19,7 +19,7 @@ import qualified Copilot.Compile.SBV.Witness as W
 import Copilot.Compile.SBV.Common
 import Copilot.Compile.SBV.ACSLexpr
 
-import qualified Copilot.Core.PrettyPrint as PP
+import qualified Copilot.Compile.SBV.PPACSL as PP
 import qualified Text.PrettyPrint.HughesPJ as PJ
 
 import qualified Copilot.Core as C
