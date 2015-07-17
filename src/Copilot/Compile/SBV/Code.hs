@@ -153,7 +153,7 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
 --------------------------------------------------------------------------------
 
 -- Generate an SBV function that calculates the Copilot expression to get the
--- next index to sample an external array.
+-- next index to sample an external function.
 getExtFuns :: MetaTable -> [SBVFunc]
 getExtFuns meta@(MetaTable { externFunInfoMap = exts })
   = concatMap mkExtF (M.toList exts)
@@ -165,6 +165,26 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
                       , C.externFunArgs = args })
     = 
     map go (mkArgIdx args)
+    where
+    go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+
+-- Generate an SBV function that calculates the Copilot expression to get the
+-- next index to sample the fields of a struct.
+getExtStrs :: MetaTable -> [SBVFunc]
+getExtStrs meta@(MetaTable { externStrInfoMap = exts })
+  = concatMap mkExtS (M.toList exts)
+  
+  where
+  mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
+  mkExtF (_, C.ExtStruct { C.externStructName = name
+                         , C.externStructTag  = tag
+                         , C.externStructArgs = sargs })
+    = 
+    map go (mkArgIdx sargs)
     where
     go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
 
