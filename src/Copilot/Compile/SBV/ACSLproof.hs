@@ -168,7 +168,7 @@ transformExpr e0 = case e0 of
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3
 
   Label t s e                    -> case s of 
-    '?':m -> ExternFun t ("ident_"++(showType t)) [UExpr {uExprExpr = Label t m $ transformExpr e, uExprType = t}] Nothing Nothing
+    '?':m -> ExternFun t ("ident_"++(showType t)) [UExpr {uExprExpr = transformExpr $ Label t m $ e, uExprType = t}] Nothing Nothing
     _     -> Label t s $ transformExpr e
     
 
