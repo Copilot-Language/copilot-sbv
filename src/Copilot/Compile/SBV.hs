@@ -12,6 +12,7 @@ module Copilot.Compile.SBV
 
 import qualified Copilot.Core as C
 import qualified Copilot.Core.PrettyPrint as C
+import qualified Copilot.Core.PrettyDot as C
 import Copilot.Compile.Header.C99 (c99HeaderName, genC99Header)
 
 import qualified Data.SBV as S
@@ -36,7 +37,9 @@ sbvDirName :: String
 sbvDirName = "copilot-sbv-codegen"
 
 proofACSL :: Params -> C.Spec -> IO ()
-proofACSL p s = compileWithSBV p [] (DB.trace (C.prettyPrint $ (T.transformProofACSL s)) (T.transformProofACSL s))
+proofACSL p s = do
+  writeFile "main.gv" (C.prettyPrintDot $ (T.transformProofACSL s))
+  compileWithSBV p [] (T.transformProofACSL s)
 
 compile :: Params -> C.Spec -> IO ()
 compile p s = compileWithSBV p [] (T.transform s)
