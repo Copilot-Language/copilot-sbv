@@ -19,7 +19,7 @@ import qualified Data.SBV as S
 import Copilot.Compile.SBV.Driver (driver, driverName)
 import Copilot.Compile.SBV.Makefile (makefile, makefileName)
 import Copilot.Compile.SBV.Code 
-  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
+  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns, getExtStrs)
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
 import qualified Copilot.Compile.SBV.Transform as T
@@ -57,6 +57,7 @@ compileWithSBV params sbvs spec0 = do
     ++ fireTriggers    meta spec 
     ++ getExtArrs      meta 
     ++ getExtFuns      meta 
+    ++ getExtStrs      meta 
     ++ sbvs
     )
 

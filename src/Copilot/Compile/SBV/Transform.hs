@@ -131,6 +131,10 @@ transformUExpr :: UExpr -> UExpr
 transformUExpr UExpr { uExprExpr = e, uExprType = t } = 
   UExpr { uExprExpr = transformExpr e, uExprType = t }
 
+transformSExpr :: (Name, UExpr) -> (Name, UExpr)
+transformSExpr (name, UExpr { uExprExpr = e, uExprType = t }) =
+  (name, transformUExpr UExpr { uExprExpr = e, uExprType = t })
+
 
 --------------------------------------------------------------------------------
 -- Expr transformation
@@ -163,7 +167,7 @@ transformExpr e0 = case e0 of
   ExternFun t name args contxt yy-> ExternFun t name (map transformUExpr args) contxt yy
   ExternArray t1 t2 name 
               size idx context yy-> ExternArray t1 t2 name size (transformExpr idx) context yy
-  ExternStruct t name sargs yy   -> ExternStruct t name (map transformUExpr sargs) yy
+  ExternStruct t name sargs yy   -> ExternStruct t name (map transformSExpr sargs) yy
   GetField t id name             -> GetField t id name
   Op1 op e                       -> transformOp1 op e
   Op2 op e1 e2                   -> transformOp2 op e1 e2

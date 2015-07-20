@@ -17,6 +17,7 @@ module Copilot.Compile.SBV.Common
   , mkTriggerGuardFn
   , mkTriggerArgFn
   , mkArgIdx
+  , mkSArgIdx
   , tagExtract
   ) where
 
@@ -62,6 +63,9 @@ mkTriggerArgFn i nm = "trigger_" ++ nm ++ "_arg_" ++ show i
 
 mkArgIdx :: [a] -> [(Int, a)]
 mkArgIdx args = zip [0,1 ..] args
+
+mkSArgIdx :: [(a, b)] -> [(Int, b)]
+mkSArgIdx sargs = zip [0,1 ..] $ map (\(name, field) -> field) sargs
 
 tagExtract :: Maybe Tag -> Tag
 tagExtract Nothing = impossible "tagExtract" "copilot-sbv"

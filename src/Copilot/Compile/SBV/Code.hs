@@ -11,6 +11,7 @@ module Copilot.Compile.SBV.Code
   , fireTriggers
   , getExtArrs
   , getExtFuns
+  , getExtStrs
   ) where
 
 import Copilot.Compile.SBV.Copilot2SBV
@@ -180,11 +181,11 @@ getExtStrs meta@(MetaTable { externStrInfoMap = exts })
   
   where
   mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
-  mkExtF (_, C.ExtStruct { C.externStructName = name
+  mkExtS (_, C.ExtStruct { C.externStructName = name
                          , C.externStructTag  = tag
                          , C.externStructArgs = sargs })
     = 
-    map go (mkArgIdx sargs)
+    map go (mkSArgIdx sargs)
     where
     go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
 

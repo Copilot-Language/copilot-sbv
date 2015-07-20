@@ -180,18 +180,19 @@ c2sExpr_ e0 env inputs = case e0 of
         coerce (cong p) v
  
   ----------------------------------------------------
-{-
+
   C.ExternStruct t name _ tag ->
     getSBV t getExtStr
 
     where
-    getExtStr :: ExtStruct
+    getExtStr :: ExtInput
     getExtStr = lookupInput (mkExtTmpTag name (tag)) (extStrs inputs)
 
-    getSBV t1 ExtStruct { extStruct = v }
-      = let Just p = C.Bool =~= C.Bool in
+    getSBV t1 ExtInput { extType  = t2
+                       , extInput = v }
+      = let Just p = t2 =~= t1 in
         coerce (cong p) v
--}
+
   ----------------------------------------------------
 
   C.Op1 op e ->

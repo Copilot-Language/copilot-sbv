@@ -138,7 +138,7 @@ allocObserver C.Observer { C.observerName = name
 data Arg = Extern    C.Name
          | ExternFun C.Name C.Tag
          | ExternArr C.Name C.Tag
---         | ExternStruct C.Name C.Tag
+         | ExternStruct C.Name C.Tag
          | Queue     C.Id
   deriving Eq
 
@@ -193,10 +193,8 @@ c2Args_ e0 = case e0 of
   C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
 
   C.ExternStruct _ name sargs tag ->
-    --(ExternStruct name (tagExtract tag)) : 
-      concatMap (\C.UExpr { C.uExprExpr = expr } 
-                     -> c2Args expr) 
-                sargs
+    (ExternStruct name (tagExtract tag)) : 
+      concatMap c2Sargs_ sargs
 
   C.GetField _ _ name   -> [Extern name]
 
@@ -207,5 +205,11 @@ c2Args_ e0 = case e0 of
   C.Op3 _ e1 e2 e3 -> c2Args_ e1 ++ c2Args_ e2 ++ c2Args_ e3
 
   C.Label _ _ e    -> c2Args_ e
+
+--------------------------------------------------------------------------------
+
+c2Sargs_ :: (C.Name, C.UExpr) -> [Arg]
+c2Sargs_ (name, C.UExpr { C.uExprExpr = expr }) =
+  c2Args expr
 
 --------------------------------------------------------------------------------
