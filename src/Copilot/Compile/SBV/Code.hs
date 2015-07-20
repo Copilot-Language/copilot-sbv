@@ -53,7 +53,7 @@ updateStates meta (C.Spec streams _ _ _) =
                              , C.streamExprType = t1
                                                       } 
     = mkSBVFunc (mkUpdateStFn id) $ do
-        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta) 
@@ -83,7 +83,7 @@ updateObservers meta (C.Spec _ observers _ _) =
     where
     mkSBVExp =
       do
-        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         W.SymWordInst <- return (W.symWordInst t)
@@ -106,7 +106,7 @@ fireTriggers meta (C.Spec _ _ triggers _) =
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
     mkSBVExp = do
-      S.cgAddDecl [("/*test 006*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot guard) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 006*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False guard) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args guard)
       let e = c2sExpr inputs guard
       S.cgReturn e
@@ -120,7 +120,7 @@ mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
   mkSBVFunc fnCallName mkExpr
   where
   mkExpr = do
-    S.cgAddDecl [("/*test 003*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+    S.cgAddDecl [("/*test 003*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
     inputs <- mkInputs meta (c2Args e)
     let e' = c2sExpr inputs e
     W.SymWordInst <- return (W.symWordInst t)
@@ -145,7 +145,7 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
-      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args idx)
       W.SymWordInst <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
