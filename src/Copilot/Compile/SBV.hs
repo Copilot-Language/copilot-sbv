@@ -38,7 +38,7 @@ sbvDirName = "copilot-sbv-codegen"
 
 proofACSL :: Params -> C.Spec -> IO ()
 proofACSL p s = do
-  writeFile "main.gv" (C.prettyPrintDot $ (T.transformProofACSL s))
+  writeFile "main.gv" (C.prettyPrintDot $ (s))
   compileWithSBV p [] (T.transformProofACSL s)
 
 compile :: Params -> C.Spec -> IO ()
