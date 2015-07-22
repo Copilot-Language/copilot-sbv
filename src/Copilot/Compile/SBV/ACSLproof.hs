@@ -216,9 +216,9 @@ transformOp1 op e = case op of
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
   Cos Double   -> ExternFun Double "cos" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Double }] Nothing Nothing
-  Tan Float    -> ExternFun Float "cosf" 
+  Tan Float    -> ExternFun Float "tanf" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
-  Tan Double   -> ExternFun Double "cos" 
+  Tan Double   -> ExternFun Double "tan" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Double }] Nothing Nothing
   Asin Float   -> ExternFun Float "asinf" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
