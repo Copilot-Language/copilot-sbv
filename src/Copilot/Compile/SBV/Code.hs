@@ -267,13 +267,21 @@ mkInputs meta args =
     mkExtInput extInfo
 
     where
+    f :: (String, C.UExpr) -> S.SBVCodeGen (String, ExtInput)
+    f (name, C.UExpr { C.uExprType = t }) = do
+        ext <- mkExtInput_ t name
+        return (name, ExtInput { extInput = ext, extType = t })
+
     mkExtInput :: C.ExtStruct -> S.SBVCodeGen Inputs
-    mkExtInput C.ExtStruct { }
+    mkExtInput C.ExtStruct { C.externStructArgs = sargs }
       = do
       v <- mkExtInput_ C.Bool (mkExtTmpTag name (Just tag))
-      return acc { extStrs = ((mkExtTmpTag name (Just tag)), ExtInput
-                                      { extInput = v
-                                      , extType  = C.Bool }
+
+      fields <- sequence $ map f sargs
+
+      return acc { extStrs = ((mkExtTmpTag name (Just tag)), ExtStruct
+                                      { extStruct = v
+                                      , extFields = fields }
                              ) : extStrs acc }
 
   -----------------------------------------

@@ -8,8 +8,10 @@ module Copilot.Compile.SBV.Copilot2SBV
   ( c2sExpr
   , Inputs(..)
   , Ext
+  , ExtStr
   , ExtQue
   , ExtInput(..)
+  , ExtStruct(..)
   , QueInput(..)
   , QueueIn(..)
   ) 
@@ -29,13 +31,14 @@ import qualified Copilot.Compile.SBV.Witness as W
 import Copilot.Core (Op1 (..), Op2 (..), Op3 (..), badUsage)
 import qualified Copilot.Core as C
 import qualified Copilot.Core.Type as C
-import Copilot.Core.Error (impossible)
+import Copilot.Core.Error (badUsage, impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
+import Data.Maybe (fromJust)
 
 --------------------------------------------------------------------------------
 
 type Ext = (C.Name, ExtInput)
---type ExtStr = (C.Name, ExtStruct)
+type ExtStr = (C.Name, ExtStruct)
 type ExtQue = (C.Id, QueInput)
 
 -- These are all the inputs to the to the SBV expression we're building.
@@ -43,7 +46,7 @@ data Inputs = Inputs
   { extVars  :: [Ext] -- external variables
   , extArrs  :: [Ext] -- external arrays
   , extFuns  :: [Ext] -- external functions
-  , extStrs  :: [Ext{-Str-}] -- structs
+  , extStrs  :: [ExtStr] -- structs
   , extQues  :: [ExtQue] }
 
 -- External input -- variables, arrays, and functions
@@ -52,9 +55,9 @@ data ExtInput = forall a. ExtInput
   , extType  :: C.Type a }
 
 -- Structs
-{-data ExtStruct = forall a. ExtStruct
-  { extStruct :: S.SBV a
-  , extFields :: [Ext] }-}
+data ExtStruct = ExtStruct
+  { extStruct :: S.SBV Bool
+  , extFields :: [Ext] }
 
 -- Stream queues
 data QueInput = forall a. QueInput 
@@ -181,17 +184,32 @@ c2sExpr_ e0 env inputs = case e0 of
  
   ----------------------------------------------------
 
-  C.ExternStruct t name _ tag ->
-    getSBV t getExtStr
+  C.ExternStruct C.Bool name _ tag ->
+    getSBV getExtStr
 
     where
-    getExtStr :: ExtInput
+    getExtStr :: ExtStruct
     getExtStr = lookupInput (mkExtTmpTag name (tag)) (extStrs inputs)
 
-    getSBV t1 ExtInput { extType  = t2
-                       , extInput = v }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
+    getSBV ExtStruct { extStruct   = v
+                     , extFields   = fields }
+      = v
+
+  ----------------------------------------------------
+
+  C.GetField _ t struct name ->
+    case struct of
+      C.ExternStruct _ str_name sargs tag -> getSBV t getStrField
+        where
+        getStrField :: ExtInput
+        getStrField = fromJust . lookup name . extFields $
+                        lookupInput (mkExtTmpTag str_name (tag)) (extStrs inputs)
+
+        getSBV t1 ExtInput { extType = t2
+                           , extInput = v }
+          = let Just p = t2 =~= t1 in
+            coerce (cong p) v
+      _ -> badUsage "Non-struct is the first parameter of (#) struct field access"
 
   ----------------------------------------------------
 

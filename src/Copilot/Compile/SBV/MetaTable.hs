@@ -26,6 +26,7 @@ import qualified Copilot.Core as C
 
 import Data.Map (Map)
 import Data.List (nub)
+import Data.Maybe (fromJust)
 import qualified Data.Map as M
 import Prelude hiding (id)
 
@@ -135,21 +136,21 @@ allocObserver C.Observer { C.observerName = name
 --------------------------------------------------------------------------------
 
 -- Kinds of arguments to SBV functions
-data Arg = Extern    C.Name
-         | ExternFun C.Name C.Tag
-         | ExternArr C.Name C.Tag
+data Arg = Extern       C.Name
+         | ExternFun    C.Name C.Tag
+         | ExternArr    C.Name C.Tag
          | ExternStruct C.Name C.Tag
-         | Queue     C.Id
+         | Queue        C.Id
   deriving Eq
 
 -- | Normal argument calls.
 argToCall :: Arg -> [String]
-argToCall (Extern name)        = [mkExtTmpVar name]
-argToCall (ExternArr name tag) = [mkExtTmpTag name (Just tag)]
-argToCall (ExternFun name tag) = [mkExtTmpTag name (Just tag)]
---argToCall (ExternStruct name tag) = [mkExtTmpTag name (Just tag)]
-argToCall (Queue id)           = [ mkQueueVar id 
-                                 , mkQueuePtrVar id ]
+argToCall (Extern name)           = [mkExtTmpVar name]
+argToCall (ExternArr name tag)    = [mkExtTmpTag name (Just tag)]
+argToCall (ExternFun name tag)    = [mkExtTmpTag name (Just tag)]
+argToCall (ExternStruct name tag) = [mkExtTmpTag name (Just tag)]
+argToCall (Queue id)              = [ mkQueueVar id 
+                                    , mkQueuePtrVar id ]
 
 --------------------------------------------------------------------------------
 
@@ -196,7 +197,10 @@ c2Args_ e0 = case e0 of
     (ExternStruct name (tagExtract tag)) : 
       concatMap c2Sargs_ sargs
 
-  C.GetField _ _ name   -> [Extern name]
+  C.GetField _ _ struct name ->
+    case struct of
+      C.ExternStruct _ _ sargs _ -> c2Sargs_ (name, fromJust $ lookup name sargs)
+      _                          -> []
 
   C.Op1 _ e        -> c2Args_ e
 
