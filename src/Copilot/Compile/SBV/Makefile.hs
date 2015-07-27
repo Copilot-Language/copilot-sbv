@@ -30,7 +30,7 @@ makefile params dir sbvName = do
   wr (text "a")
   removeFile filePath
   wr (text "# Makefile rules for the Copilot driver.")
-  wr (text "\nCCFLAGS=-fnone \nCC=ccomp")
+  wr (text "\nCCFLAGS=-fnone \nCC=ccomp\nSHELL := /bin/bash")
   wr (text "")
   wr $ text "driver" <> colon 
         <+> text (driverName params) <+> text (withPre fileName) <> text ".h" 
@@ -45,7 +45,7 @@ makefile params dir sbvName = do
   wr $ text "\nfval" <> colon 
         <+> text ("\n\tframa-c -val -main testing -slevel 10000000 *.h *.c | tee logval")
   wr $ text "\nfwp" <> colon 
-        <+> text ("\n\tparallel frama-c -wp -wp-out . -wp-prover CVC4 -wp-split {} ::: *.c | tee >logfwp >(grep 'Proved\\|Unknown\\|Failed\\|Parsing .*\\.c' > logfwpcompact) >(grep 'Proved\\|Unknown\\|Failed\\|Parsing .*\\.c')")
+        <+> text ("\n\tparallel frama-c -wp -wp-out . -wp-timeout 20 -wp-prover CVC4 -wp-split {} ::: *.c | tee >logfwp >(grep 'Proved\\|Unknown\\|Timeout\\|Failed\\|Qed:\\s\\|CVC4:\\s\\|Parsing .*\\.c' > logfwpcompact) >(grep 'Proved\\|Qed:\\s\\|CVC4:\\s\\|Unknown\\|Timeout\\|Failed\\|Parsing .*\\.c')")
   wr $ text "\nsplint" <> colon 
         <+> text ("\n\tsplint -comment-char % *.h *.c | tee logsplint")
 
