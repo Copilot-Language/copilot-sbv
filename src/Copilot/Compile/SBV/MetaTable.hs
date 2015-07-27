@@ -79,7 +79,7 @@ allocMetaTable spec =
 
   where
   streamInfoMap_    = M.fromList $ map allocStream     (C.specStreams spec)
-  externVarInfoMap_ = M.fromList $ map allocExternVars (C.externVars spec)
+  externVarInfoMap_ = trace ("hahah"++(show $ map fst $ map allocExternVars (C.externVars spec))) $ M.fromList $ map allocExternVars (C.externVars spec)
   externArrInfoMap_ = M.fromList $ map allocExternArrs (C.externArrays spec)
   externFunInfoMap_ = M.fromList $ map allocExternFuns (C.externFuns spec)
   externStrInfoMap_ = M.fromList $ map allocExternStrs (C.externStructs spec)
@@ -198,8 +198,8 @@ c2Args_ e0 = case e0 of
 
   C.GetField _ _ struct name ->
     case struct of
-      C.ExternStruct _ sname sargs _ -> c2Sargs_ sname (name, fromJust $ lookup name sargs)
-      _                          -> []
+      C.ExternStruct _ sname sargs _ -> trace "liwfwfeoh" $ c2Sargs_ sname (name, fromJust $ lookup name sargs)
+      _                          -> trace "hfeaohfwe" []
 
   C.Op1 _ e        -> c2Args_ e
 
@@ -218,10 +218,10 @@ c2Sargs_ sname (_, C.UExpr { C.uExprExpr = expr }) =
 --------------------------------------------------------------------------------
 
 fixArgName :: C.Name -> Arg -> Arg
-fixArgName sname (Extern name) = Extern (sname++"."++name)
-fixArgName sname (ExternFun name tag) = ExternFun (sname++"."++name) tag
-fixArgName sname (ExternArr name tag) = ExternArr (sname++"."++name) tag
-fixArgName sname (ExternStruct name tag) = ExternStruct (sname++"."++name) tag
+fixArgName sname (Extern name) = trace ("lhfea" ++ sname++"."++name) $ Extern (sname++"."++name)
+fixArgName sname (ExternFun name tag) = trace ("lhfadea" ++ sname++"."++name) $ ExternFun (sname++"."++name) tag
+fixArgName sname (ExternArr name tag) = trace ("lhwqfea" ++ sname++"."++name) $ ExternArr (sname++"."++name) tag
+fixArgName sname (ExternStruct name tag) = trace ("lhfhrtea" ++ sname++"."++name) $ ExternStruct (sname++"."++name) tag
 fixArgName sname (Queue id) = Queue id
 
 --------------------------------------------------------------------------------

@@ -211,7 +211,7 @@ mkInputs meta args =
  
   -- External variables
   argToInput acc (Extern name) = 
-    let extInfos = trace ("suifwe" ++ show name) $ externVarInfoMap meta in
+    let extInfos = trace ("suifwe" ++ show name ++ "\n" ++ (show $ map fst $ M.toList $ externVarInfoMap meta)) $ externVarInfoMap meta in
     let Just extInfo = trace ("lkaeffljk" ++ show name) $ M.lookup (name) extInfos in
     mkExtInput extInfo
 
