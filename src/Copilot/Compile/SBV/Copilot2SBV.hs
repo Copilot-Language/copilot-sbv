@@ -197,16 +197,16 @@ c2sExpr_ e0 env inputs = case e0 of
         where
         getStrField :: ExtInput
         getStrField =
-          case lookup (str_name++"."++(mkExtTmpVar (name))) (extVars inputs) of
+          case lookup (str_name++"."++name) (extVars inputs) of
             Just val  -> val
             Nothing   ->
-              case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extArrs inputs) of
+              case lookup (str_name++"."++name) (extArrs inputs) of
                 Just val  -> val
                 Nothing   ->
-                  case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extFuns inputs) of
+                  case lookup (str_name++"."++name) (extFuns inputs) of
                     Just val  -> val
                     Nothing   ->
-                      case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extStrs inputs) of
+                      case lookup (str_name++"."++name) (extStrs inputs) of
                         Just val  -> val
                         Nothing   -> badUsage "Struct field is undefined"
 
