@@ -8,10 +8,8 @@ module Copilot.Compile.SBV.Copilot2SBV
   ( c2sExpr
   , Inputs(..)
   , Ext
-  , ExtStr
   , ExtQue
   , ExtInput(..)
-  , ExtStruct(..)
   , QueInput(..)
   , QueueIn(..)
   ) 
@@ -39,7 +37,6 @@ import Debug.Trace
 --------------------------------------------------------------------------------
 
 type Ext = (C.Name, ExtInput)
-type ExtStr = (C.Name, ExtStruct)
 type ExtQue = (C.Id, QueInput)
 
 -- These are all the inputs to the to the SBV expression we're building.
@@ -47,18 +44,13 @@ data Inputs = Inputs
   { extVars  :: [Ext] -- external variables
   , extArrs  :: [Ext] -- external arrays
   , extFuns  :: [Ext] -- external functions
-  , extStrs  :: [ExtStr] -- structs
+  , extStrs  :: [Ext] -- structs
   , extQues  :: [ExtQue] }
 
 -- External input -- variables, arrays, and functions
 data ExtInput = forall a. ExtInput 
   { extInput :: S.SBV a
   , extType  :: C.Type a }
-
--- Structs
-data ExtStruct = ExtStruct
-  { extStruct :: S.SBV Bool
-  , extFields :: [Ext] }
 
 -- Stream queues
 data QueInput = forall a. QueInput 
@@ -185,16 +177,17 @@ c2sExpr_ e0 env inputs = case e0 of
  
   ----------------------------------------------------
 
-  C.ExternStruct C.Bool name _ tag ->
-    getSBV getExtStr
+  C.ExternStruct t name _ tag ->
+    getSBV t getExtStr
 
     where
-    getExtStr :: ExtStruct
+    getExtStr :: ExtInput
     getExtStr = lookupInput (mkExtTmpTag name (tag)) (extStrs inputs)
 
-    getSBV ExtStruct { extStruct   = v
-                     , extFields   = fields }
-      = v
+    getSBV t1 ExtInput { extInput = v
+                    , extType = t2 }
+      = let Just p = t2 =~= t1 in
+        coerce (cong p) v
 
   ----------------------------------------------------
 
@@ -203,8 +196,19 @@ c2sExpr_ e0 env inputs = case e0 of
       C.ExternStruct _ str_name sargs tag -> getSBV t getStrField
         where
         getStrField :: ExtInput
-        getStrField = fromJust . lookup name . extFields $
-                        trace ("iiosedhufs"++str_name) lookupInput (mkExtTmpTag str_name (tag)) (extStrs inputs)
+        getStrField =
+          case lookup (str_name++"."++(mkExtTmpVar (name))) (extVars inputs) of
+            Just val  -> val
+            Nothing   ->
+              case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extArrs inputs) of
+                Just val  -> val
+                Nothing   ->
+                  case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extFuns inputs) of
+                    Just val  -> val
+                    Nothing   ->
+                      case lookup (str_name++"."++(mkExtTmpTag (name) (tag))) (extStrs inputs) of
+                        Just val  -> val
+                        Nothing   -> badUsage "Struct field is undefined"
 
         getSBV t1 ExtInput { extType = t2
                            , extInput = v }
