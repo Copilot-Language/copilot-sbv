@@ -211,8 +211,8 @@ mkInputs meta args =
  
   -- External variables
   argToInput acc (Extern name) = 
-    let extInfos = externVarInfoMap meta in
-    let Just extInfo = trace (show name) $ M.lookup name extInfos in
+    let extInfos = trace ("suifwe" ++ show name) $ externVarInfoMap meta in
+    let Just extInfo = trace ("lkaeffljk" ++ show name) $ M.lookup (name) extInfos in
     mkExtInput extInfo
 
     where 
@@ -263,8 +263,8 @@ mkInputs meta args =
 
   -- Structs
   argToInput acc (ExternStruct name tag) =
-    let extInfos = externStrInfoMap meta in
-    let Just extInfo = M.lookup tag extInfos in
+    let extInfos = trace ("aflfe" ++ show name) (externStrInfoMap meta) in
+    let Just extInfo = (M.lookup tag extInfos) in
     mkExtInput extInfo
 
     where

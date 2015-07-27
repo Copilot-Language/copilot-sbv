@@ -34,6 +34,7 @@ import qualified Copilot.Core.Type as C
 import Copilot.Core.Error (badUsage, impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -203,7 +204,7 @@ c2sExpr_ e0 env inputs = case e0 of
         where
         getStrField :: ExtInput
         getStrField = fromJust . lookup name . extFields $
-                        lookupInput (mkExtTmpTag str_name (tag)) (extStrs inputs)
+                        trace ("iiosedhufs"++str_name) lookupInput (mkExtTmpTag str_name (tag)) (extStrs inputs)
 
         getSBV t1 ExtInput { extType = t2
                            , extInput = v }

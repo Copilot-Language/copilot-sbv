@@ -29,6 +29,7 @@ import Data.List (nub)
 import Data.Maybe (fromJust)
 import qualified Data.Map as M
 import Prelude hiding (id)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -183,7 +184,7 @@ c2Args_ e0 = case e0 of
 
   C.Var _ _              -> []
 
-  C.ExternVar   _ name _ -> [Extern name]
+  C.ExternVar   _ name _ -> [trace ("jaaepoji"++show name) Extern name]
 
   C.ExternFun   _ name args _ tag -> 
     (ExternFun name (tagExtract tag)) : 
@@ -193,9 +194,8 @@ c2Args_ e0 = case e0 of
 
   C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
 
-  C.ExternStruct _ name sargs tag -> []
-    {-[(ExternStruct name (tagExtract tag))] : 
-      concatMap c2Sargs_ sargs-}
+  C.ExternStruct _ name sargs tag -> (ExternStruct name (tagExtract tag)) : 
+      concatMap c2Sargs_ sargs
 
   C.GetField _ _ struct name ->
     case struct of

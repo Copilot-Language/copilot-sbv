@@ -4,7 +4,6 @@
 
 -- | A pretty printer for Copilot specifications.
 
-{-# LANGUAGE Safe #-}
 {-# LANGUAGE GADTs #-}
 
 module Copilot.Compile.SBV.ACSLexpr
