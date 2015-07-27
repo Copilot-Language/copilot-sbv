@@ -54,7 +54,6 @@ library
                           , Copilot.Compile.SBV.Copilot2SBV
                           , Copilot.Compile.SBV.MetaTable
                           , Copilot.Compile.SBV.Params
-                          , Copilot.Compile.SBV.PPACSL
                           , Copilot.Compile.SBV.Queue
                           , Copilot.Compile.SBV.Witness
                           , Copilot.Compile.SBV.Driver
