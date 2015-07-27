@@ -31,6 +31,7 @@ import qualified Data.SBV as S
 import qualified Data.Map as M
 import Control.Monad (foldM)
 import Prelude hiding (id)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -211,7 +212,7 @@ mkInputs meta args =
   -- External variables
   argToInput acc (Extern name) = 
     let extInfos = externVarInfoMap meta in
-    let Just extInfo = M.lookup name extInfos in
+    let Just extInfo = trace (show name) $ M.lookup name extInfos in
     mkExtInput extInfo
 
     where 

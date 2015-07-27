@@ -193,9 +193,9 @@ c2Args_ e0 = case e0 of
 
   C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
 
-  C.ExternStruct _ name sargs tag ->
-    (ExternStruct name (tagExtract tag)) : 
-      concatMap c2Sargs_ sargs
+  C.ExternStruct _ name sargs tag -> []
+    {-[(ExternStruct name (tagExtract tag))] : 
+      concatMap c2Sargs_ sargs-}
 
   C.GetField _ _ struct name ->
     case struct of
@@ -213,7 +213,7 @@ c2Args_ e0 = case e0 of
 --------------------------------------------------------------------------------
 
 c2Sargs_ :: (C.Name, C.UExpr) -> [Arg]
-c2Sargs_ (name, C.UExpr { C.uExprExpr = expr }) =
+c2Sargs_ (_, C.UExpr { C.uExprExpr = expr }) =
   c2Args expr
 
 --------------------------------------------------------------------------------
