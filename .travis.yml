@@ -16,6 +16,9 @@ before_install:
   - travis_retry sudo apt-get update
   - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER # see note about happy/alex
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+  - cabal --version
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - travis_retry cabal update
   - git clone --depth 1 https://github.com/LeventErkok/sbv
   - cd sbv && cabal install --only-dependencies && cabal configure && cabal build && cabal install
   - cd ..
@@ -24,9 +27,6 @@ before_install:
   - cd ..
 
 install:
-  - cabal --version
-  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - travis_retry cabal update
   - cabal install --only-dependencies --enable-tests --enable-benchmarks
 
 # Here starts the actual work to be performed for the package under test; any
