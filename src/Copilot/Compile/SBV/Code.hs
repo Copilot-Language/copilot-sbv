@@ -178,7 +178,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 -- next index to sample the fields of a struct.
 getExtStrs :: MetaTable -> [SBVFunc]
 getExtStrs meta@(MetaTable { externStrInfoMap = exts })
-  = concatMap mkExtS (M.toList exts)
+  = trace ("AAAA") $ concatMap mkExtS (trace ("YOYOYO") $ M.toList exts)
   
   where
   mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
@@ -186,9 +186,9 @@ getExtStrs meta@(MetaTable { externStrInfoMap = exts })
                          , C.externStructTag  = tag
                          , C.externStructArgs = sargs })
     = 
-    map go (mkSArgIdx sargs)
+    trace ("BBBB") $ map go (mkSArgIdx sargs)
     where
-    go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
+    go (i,e) = trace ("CCCC") $ mkArgCall meta (mkExtFunArgFn i name tag) e
 
 --------------------------------------------------------------------------------
 
@@ -263,7 +263,7 @@ mkInputs meta args =
 
   -- Structs
   argToInput acc (ExternStruct name tag) =
-    let extInfos = trace ("aflfe" ++ show name) (externStrInfoMap meta) in
+    let extInfos = trace ("aflfeEEE" ++ show name) (externStrInfoMap meta) in
     let Just extInfo = (M.lookup tag extInfos) in
     mkExtInput extInfo
 
@@ -272,10 +272,10 @@ mkInputs meta args =
     mkExtInput C.ExtStruct {}
       = do
       v <- mkExtInput_ C.Bool (mkExtTmpTag name (Just tag))
-      return acc { extFuns = ((mkExtTmpTag name (Just tag)), ExtInput 
+      return acc { extStrs = ((mkExtTmpTag name (Just tag)), ExtInput 
                                       { extInput = v
                                       , extType  = C.Bool }
-                             ) : extFuns acc }
+                             ) : extStrs acc }
 
   -----------------------------------------
 
