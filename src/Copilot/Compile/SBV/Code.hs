@@ -210,16 +210,17 @@ mkInputs meta args =
   -----------------------------------------
  
   -- External variables
-  argToInput acc (Extern name) = 
+  argToInput acc (Extern name tag) = 
     let extInfos = trace ("suifwe" ++ show name ++ "\n" ++ (show $ map fst $ M.toList $ externVarInfoMap meta)) $ externVarInfoMap meta in
-    let Just extInfo = trace ("lkaeffljk" ++ show name) $ M.lookup (name) extInfos in
+    let Just extInfo = trace ("lkaeffljk" ++ show name) $ M.lookup (tag) extInfos in
     mkExtInput extInfo
 
     where 
     mkExtInput :: C.ExtVar -> S.SBVCodeGen Inputs
-    mkExtInput (C.ExtVar _ C.UType { C.uTypeType = t }) = do
-      ext <- mkExtInput_ t (mkExtTmpVar name)
-      return acc { extVars = (name, (ExtInput { extInput = ext 
+    mkExtInput (C.ExtVar _ _ C.UType { C.uTypeType = t }) = do
+      ext <- mkExtInput_ t (mkExtTmpTag name (Just tag))
+      return acc { extVars = (mkExtTmpTag name (Just tag), (ExtInput
+                                              { extInput = ext 
                                               , extType  = t })
                              ) : extVars acc }
 
