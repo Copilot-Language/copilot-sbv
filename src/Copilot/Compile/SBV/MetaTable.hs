@@ -109,7 +109,7 @@ allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
 --------------------------------------------------------------------------------
 
 allocExternStrs :: C.ExtStruct -> (C.Tag, C.ExtStruct)
-allocExternStrs struct = (tagExtract $ C.externStructTag struct, struct)
+allocExternStrs struct = (tagExtract $ C.externStructTag struct, trace ("ALOHA") $ struct)
 
 --------------------------------------------------------------------------------
 
