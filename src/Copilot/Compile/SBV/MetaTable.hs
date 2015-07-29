@@ -109,7 +109,7 @@ allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
 --------------------------------------------------------------------------------
 
 allocExternStrs :: C.ExtStruct -> (C.Tag, C.ExtStruct)
-allocExternStrs struct = (tagExtract $ C.externStructTag struct, trace ("ALOHA") $ struct)
+allocExternStrs struct = (tagExtract $ C.externStructTag struct, trace "WASSUP" $ struct)
 
 --------------------------------------------------------------------------------
 
@@ -194,7 +194,7 @@ c2Args_ e0 = case e0 of
 
   C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
 
-  C.ExternStruct _ name sargs tag -> concatMap (c2Sargs_ name) sargs
+  C.ExternStruct _ name sargs tag -> (ExternStruct name (tagExtract tag)) : concatMap (c2Sargs_ name) sargs
 
   C.GetField _ _ struct name ->
     case struct of

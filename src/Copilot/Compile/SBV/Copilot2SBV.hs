@@ -185,7 +185,7 @@ c2sExpr_ e0 env inputs = case e0 of
     getExtStr = lookupInput (mkExtTmpTag name (tag)) (extStrs inputs)
 
     getSBV t1 ExtInput { extInput = v
-                    , extType = t2 }
+                       , extType  = t2 }
       = let Just p = t2 =~= t1 in
         coerce (cong p) v
 

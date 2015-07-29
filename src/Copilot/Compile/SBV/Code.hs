@@ -178,7 +178,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 -- next index to sample the fields of a struct.
 getExtStrs :: MetaTable -> [SBVFunc]
 getExtStrs meta@(MetaTable { externStrInfoMap = exts })
-  = trace ("AAAA") $ concatMap mkExtS (trace ("YOYOYO") $ M.toList exts)
+  = concatMap mkExtS (trace ("YOYOYO") $ M.toList exts)
   
   where
   mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
