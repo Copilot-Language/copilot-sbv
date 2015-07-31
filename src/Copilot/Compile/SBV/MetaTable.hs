@@ -192,14 +192,15 @@ c2Args_ e0 = case e0 of
                      -> c2Args expr) 
                 args
 
-  C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
+  C.ExternArray _ _ name _ _ _ tag  -> trace ("~~~"++name) $ [ExternArr name (tagExtract tag)] 
 
-  C.ExternStruct _ name sargs tag -> (ExternStruct name (tagExtract tag)) : concatMap (c2Sargs_ name) sargs
+  C.ExternStruct _ name sargs tag -> []--concatMap (c2Sargs_ name (tagExtract tag)) sargs
 
   C.GetField _ _ struct name ->
     case struct of
-      C.ExternStruct _ sname sargs _ -> trace "liwfwfeoh" $ c2Sargs_ sname (name, fromJust $ lookup name sargs)
-      _                          -> trace "hfeaohfwe" []
+      C.ExternStruct _ sname sargs tag -> (ExternStruct name (tagExtract tag)) :
+                                         concatMap (\(_, C.UExpr { C.uExprExpr = expr }) -> c2Args expr) sargs      
+      _                                -> []
 
   C.Op1 _ e        -> c2Args_ e
 
@@ -208,12 +209,6 @@ c2Args_ e0 = case e0 of
   C.Op3 _ e1 e2 e3 -> c2Args_ e1 ++ c2Args_ e2 ++ c2Args_ e3
 
   C.Label _ _ e    -> c2Args_ e
-
---------------------------------------------------------------------------------
-
-c2Sargs_ :: C.Name -> (C.Name, C.UExpr) -> [Arg]
-c2Sargs_ sname (_, C.UExpr { C.uExprExpr = expr }) =
-  map (\x -> fixArgName sname x) (c2Args expr)
 
 --------------------------------------------------------------------------------
 
