@@ -186,9 +186,9 @@ varDecls meta = vcat $ map varDecl (getVars meta)
     queSize :: C.Type QueueSize
     queSize = C.typeOf 
 
-  getExtVars :: (C.Name, C.ExtVar) -> Decl
-  getExtVars (var, C.ExtVar _ (C.UType { C.uTypeType = t })) = 
-    Decl (retType t) (text $ mkExtTmpVar var) (int 0)
+  getExtVars :: (Int, C.ExtVar) -> Decl
+  getExtVars (_, C.ExtVar name tag (C.UType { C.uTypeType = t })) = 
+    Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
 
   getExtArrs :: (Int, C.ExtArray) -> Decl 
   getExtArrs (_, C.ExtArray { C.externArrayName     = name
@@ -247,7 +247,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   --			[] -> text " assigns \\nothing;"
 --			_ -> vcat $ ll)
 --			,text "*/"]
-  extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
+  extVars = map sampleVExt (M.toList extVMap)
 --  extADecl = map sampleAExt1 (M.toList extAMap)
 --  extFDecl = map sampleFExt1 (M.toList extFMap)
   extArrs = map sampleAExt (M.toList extAMap)
@@ -267,9 +267,9 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 --sampleVExtACSL2 name = 
 --  text " //ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
 
-sampleVExt :: C.Name -> Doc
-sampleVExt name = 
-  text (mkExtTmpVar name) <+> equals <+> text name <> semi
+sampleVExt :: (Int, C.ExtVar) -> Doc
+sampleVExt (_, C.ExtVar name tag _) = 
+  text (mkExtTmpTag name tag) <+> equals <+> text name <> semi
 
 --------------------------------------------------------------------------------
 -- Arrays
