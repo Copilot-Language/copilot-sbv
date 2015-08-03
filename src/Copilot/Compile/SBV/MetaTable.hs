@@ -34,7 +34,7 @@ import Debug.Trace
 --------------------------------------------------------------------------------
 
 type StreamInfoMap = Map C.Id C.Stream
-type ExternVarInfoMap = Map C.Tag C.ExtVar
+type ExternVarInfoMap = Map C.Name C.ExtVar
 type ExternArrInfoMap = Map C.Tag C.ExtArray
 type ExternFunInfoMap = Map C.Tag C.ExtFun
 type ExternStrInfoMap = Map C.Tag C.ExtStruct
@@ -93,8 +93,8 @@ allocStream strm = (C.streamId strm, strm)
 
 --------------------------------------------------------------------------------
 
-allocExternVars :: C.ExtVar -> (C.Tag, C.ExtVar)
-allocExternVars var = (tagExtract $ C.externVarTag var, var)
+allocExternVars :: C.ExtVar -> (C.Name, C.ExtVar)
+allocExternVars var = (C.externVarName var, var)
 
 --------------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ allocObserver C.Observer { C.observerName = name
 --------------------------------------------------------------------------------
 
 -- Kinds of arguments to SBV functions
-data Arg = Extern       C.Name C.Tag
+data Arg = Extern       C.Name
          | ExternFun    C.Name C.Tag
          | ExternArr    C.Name C.Tag
          | ExternStruct C.Name C.Tag
@@ -146,7 +146,7 @@ data Arg = Extern       C.Name C.Tag
 
 -- | Normal argument calls.
 argToCall :: Arg -> [String]
-argToCall (Extern name tag)       = [mkExtTmpTag name (Just tag)]
+argToCall (Extern name)           = [mkExtTmpVar name]
 argToCall (ExternArr name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternFun name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternStruct name tag) = [mkExtTmpTag name (Just tag)]
@@ -184,7 +184,7 @@ c2Args_ e0 = case e0 of
 
   C.Var _ _              -> []
 
-  C.ExternVar _ name _ tag -> [trace ("jaaepoji"++show name) Extern name (tagExtract tag)]
+  C.ExternVar _ name _   -> [trace ("jaaepoji"++show name) Extern name]
 
   C.ExternFun   _ name args _ tag -> 
     (ExternFun name (tagExtract tag)) : 
@@ -213,7 +213,7 @@ c2Args_ e0 = case e0 of
 --------------------------------------------------------------------------------
 
 fixArgName :: C.Name -> Arg -> Arg
-fixArgName sname (Extern name tag) = trace ("lhfea" ++ sname++"."++name) $ Extern (sname++"."++name) tag
+fixArgName sname (Extern name) = trace ("lhfea" ++ sname++"."++name) $ Extern (sname++"."++name)
 fixArgName sname (ExternFun name tag) = trace ("lhfadea" ++ sname++"."++name) $ ExternFun (sname++"."++name) tag
 fixArgName sname (ExternArr name tag) = trace ("lhwqfea" ++ sname++"."++name) $ ExternArr (sname++"."++name) tag
 fixArgName sname (ExternStruct name tag) = trace ("lhfhrtea" ++ sname++"."++name) $ ExternStruct (sname++"."++name) tag

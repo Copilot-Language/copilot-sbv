@@ -47,7 +47,7 @@ ppExpr meta e0 = parens $ case e0 of
           Just Stream { streamBuffer = ll } -> 
             let streamSize = (length ll) in
             strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
-  ExternVar _ name _ _       -> text $ mkExtTmpVar name
+  ExternVar _ name _        -> text $ mkExtTmpVar name
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)

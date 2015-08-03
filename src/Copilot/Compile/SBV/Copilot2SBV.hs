@@ -134,12 +134,12 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternVar t name _ tag -> 
+  C.ExternVar t name _ -> 
     getSBV t ext
 
     where 
     ext :: ExtInput
-    ext = lookupInput (mkExtTmpTag name (tag)) (extVars inputs)
+    ext = lookupInput name (extVars inputs)
 
     getSBV :: C.Type a -> ExtInput -> S.SBV a
     getSBV t1 ExtInput { extInput = ext'
