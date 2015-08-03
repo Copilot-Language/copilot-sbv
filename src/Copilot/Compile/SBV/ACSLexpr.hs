@@ -4,7 +4,6 @@
 
 -- | A pretty printer for Copilot specifications.
 
-{-# LANGUAGE Safe #-}
 {-# LANGUAGE GADTs #-}
 
 module Copilot.Compile.SBV.ACSLexpr
@@ -34,14 +33,21 @@ ptrName id = text "ptr_" <> int id
 ppExpr :: MT.MetaTable -> Expr a -> Doc
 ppExpr meta e0 = parens $ case e0 of
   Const t x                  -> text (showWithType Haskell t x)
-  Drop _ 0 id                -> strmName id <> lbrack <> (ptrName id) <> rbrack
+  Drop _ 0 id                -> 
+        let aa = M.lookup id (MT.streamInfoMap meta)
+        in case aa of
+          Just Stream { streamBuffer = ll } -> 
+            let streamSize = (length ll) in
+            case streamSize of 
+              1 -> strmName id <> lbrack <> (text "0") <> rbrack
+              _ -> strmName id <> lbrack <> (ptrName id) <> rbrack
   Drop _ i id                -> 
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
           Just Stream { streamBuffer = ll } -> 
             let streamSize = (length ll) in
             strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
-  ExternVar _ name _         -> text $ mkExtTmpVar name
+  ExternVar _ name _        -> text $ mkExtTmpVar name
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name 
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
@@ -60,7 +66,7 @@ ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
   Abs _    -> \x -> ((parens $ x <> (text " > 0")) <> text "? " <> x <> text " : -" <> x )
-  Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : 0"))
+  Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : ") <> x)
   Recip _  -> ppPrefix "\\recip"
   Exp _    -> ppPrefix "\\exp"
   Sqrt _   -> ppPrefix "\\sqrt"

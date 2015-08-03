@@ -12,6 +12,7 @@ module Copilot.Compile.SBV
 
 import qualified Copilot.Core as C
 import qualified Copilot.Core.PrettyPrint as C
+import qualified Copilot.Core.PrettyDot as C
 import Copilot.Compile.Header.C99 (c99HeaderName, genC99Header)
 
 import qualified Data.SBV as S
@@ -19,7 +20,7 @@ import qualified Data.SBV as S
 import Copilot.Compile.SBV.Driver (driver, driverName)
 import Copilot.Compile.SBV.Makefile (makefile, makefileName)
 import Copilot.Compile.SBV.Code 
-  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns)
+  (updateStates, updateObservers, fireTriggers, getExtArrs, getExtFuns, getExtStrs)
 import Copilot.Compile.SBV.MetaTable (allocMetaTable)
 import Copilot.Compile.SBV.Params
 import qualified Copilot.Compile.SBV.Transform as T
@@ -36,7 +37,9 @@ sbvDirName :: String
 sbvDirName = "copilot-sbv-codegen"
 
 proofACSL :: Params -> C.Spec -> IO ()
-proofACSL p s = compileWithSBV p [] (DB.trace (C.prettyPrint $ (T.transformProofACSL s)) (T.transformProofACSL s))
+proofACSL p s = do
+  writeFile "main.gv" (C.prettyPrintDot $ (s))
+  compileWithSBV p [] (T.transformProofACSL s)
 
 compile :: Params -> C.Spec -> IO ()
 compile p s = compileWithSBV p [] (T.transform s)
@@ -57,6 +60,7 @@ compileWithSBV params sbvs spec0 = do
     ++ fireTriggers    meta spec 
     ++ getExtArrs      meta 
     ++ getExtFuns      meta 
+    ++ getExtStrs      meta 
     ++ sbvs
     )
 

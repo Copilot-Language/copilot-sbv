@@ -131,6 +131,10 @@ transformUExpr :: UExpr -> UExpr
 transformUExpr UExpr { uExprExpr = e, uExprType = t } = 
   UExpr { uExprExpr = transformExpr e, uExprType = t }
 
+transformSExpr :: (Name, UExpr) -> (Name, UExpr)
+transformSExpr (name, UExpr { uExprExpr = e, uExprType = t }) =
+  (name, transformUExpr UExpr { uExprExpr = e, uExprType = t })
+
 
 --------------------------------------------------------------------------------
 -- Expr transformation
@@ -163,6 +167,8 @@ transformExpr e0 = case e0 of
   ExternFun t name args contxt yy-> ExternFun t name (map transformUExpr args) contxt yy
   ExternArray t1 t2 name 
               size idx context yy-> ExternArray t1 t2 name size (transformExpr idx) context yy
+  ExternStruct t name sargs yy   -> ExternStruct t name (map transformSExpr sargs) yy
+  GetField ts tf struct name     -> GetField ts tf struct name
   Op1 op e                       -> transformOp1 op e
   Op2 op e1 e2                   -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                -> transformOp3 op e1 e2 e3
@@ -170,7 +176,7 @@ transformExpr e0 = case e0 of
   Label t s e                    -> Label t s $ transformExpr e
     
 
-showType :: Type a -> String
+{-showType :: Type a -> String
 showType t = case t of
   Bool  -> "bool"
   Int8  -> "int8"
@@ -182,7 +188,7 @@ showType t = case t of
   Word32-> "word32"
   Word64-> "word64"
   Float -> "float"
-  Double-> "double"
+  Double-> "double"-}
 
 transformOp1 :: Op1 a b -> Expr a -> Expr b
 transformOp1 op e = case op of
@@ -214,9 +220,9 @@ transformOp1 op e = case op of
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
   Cos Double   -> ExternFun Double "cos" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Double }] Nothing Nothing
-  Tan Float    -> ExternFun Float "cosf" 
+  Tan Float    -> ExternFun Float "tanf" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
-  Tan Double   -> ExternFun Double "cos" 
+  Tan Double   -> ExternFun Double "tan" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Double }] Nothing Nothing
   Asin Float   -> ExternFun Float "asinf" 
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing

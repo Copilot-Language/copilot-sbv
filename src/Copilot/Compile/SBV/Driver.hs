@@ -77,7 +77,7 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr (text "/* Variables */")
 
   wr (varDecls meta)
-  wr (writeACSLqueues meta)
+--  wr (writeACSLqueues meta)
   wr (text "")
 
   wr copilot
@@ -237,18 +237,19 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  extACSL $$ (mkFunc ("static " ++ sampleExtsF) $ vcat (extADecl ++ extFDecl ++ extVars ++ extArrs ++ extFuns))
+  --extACSL $$ 
+  (mkFunc ("static " ++ sampleExtsF) $ vcat (extVars ++ extArrs ++  extFuns))
 
   where
-  ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
-  extACSL = vcat [text "/*@",
-			(case ll of 
-  			[] -> text " assigns \\nothing;"
-			_ -> vcat $ ll)
-			,text "*/"]
+  --ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
+  --extACSL = vcat [text "/*@",
+--			(case ll of 
+  --			[] -> text " assigns \\nothing;"
+--			_ -> vcat $ ll)
+--			,text "*/"]
   extVars = map sampleVExt ((fst . unzip . M.toList) extVMap)
-  extADecl = map sampleAExt1 (M.toList extAMap)
-  extFDecl = map sampleFExt1 (M.toList extFMap)
+--  extADecl = map sampleAExt1 (M.toList extAMap)
+--  extFDecl = map sampleFExt1 (M.toList extFMap)
   extArrs = map sampleAExt (M.toList extAMap)
   extFuns = map sampleFExt (M.toList extFMap)
 
@@ -256,15 +257,15 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 
 -- Variables
 
-sampleVExtACSL :: M.Map C.Name C.ExtVar -> [Doc]
-sampleVExtACSL extVMap = 
-  (map sampleVExtACSL1 ((fst . unzip . M.toList) extVMap)) ++ (map sampleVExtACSL2 ((fst . unzip . M.toList) extVMap))
-sampleVExtACSL1 :: C.Name -> Doc
-sampleVExtACSL1 name = 
-  text " assigns" <+> text (mkExtTmpVar name) <> semi
-sampleVExtACSL2 :: C.Name -> Doc
-sampleVExtACSL2 name = 
-  text " //ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
+--sampleVExtACSL :: M.Map C.Name C.ExtVar -> [Doc]
+--sampleVExtACSL extVMap = 
+--  (map sampleVExtACSL1 ((fst . unzip . M.toList) extVMap)) ++ (map sampleVExtACSL2 ((fst . unzip . M.toList) extVMap))
+--sampleVExtACSL1 :: C.Name -> Doc
+--sampleVExtACSL1 name = 
+--  text " assigns" <+> text (mkExtTmpVar name) <> semi
+--sampleVExtACSL2 :: C.Name -> Doc
+--sampleVExtACSL2 name = 
+--  text " //ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
 
 sampleVExt :: C.Name -> Doc
 sampleVExt name = 
@@ -276,32 +277,48 @@ sampleVExt name =
 -- Currenty, Analyze.hs in copilot-language forbids recurssion in external
 -- arrays or functions (i.e., an external array can't use another external array
 -- to compute it's index).
-sampleAExtACSL :: M.Map C.Tag C.ExtArray -> [Doc]
-sampleAExtACSL extAMap = 
-  (map sampleAExtACSL1 (M.toList extAMap)) ++ (map sampleAExtACSL2 (M.toList extAMap))
+--sampleAExtACSL :: M.Map C.Tag C.ExtArray -> [Doc]
+--sampleAExtACSL extAMap = 
+--  (map sampleAExtACSL1 (M.toList extAMap)) ++ (map sampleAExtACSL2 (M.toList extAMap))
+--
+--sampleAExtACSL1 :: (Int, C.ExtArray) -> Doc
+--sampleAExtACSL1 (_, C.ExtArray { C.externArrayName = name
+--                          , C.externArrayIdx = idx 
+--                          , C.externArrayTag = t     })
+--  = 
+--  text " assigns" <+> text (mkExtTmpTag name t) <+> semi
 
-sampleAExtACSL1 :: (Int, C.ExtArray) -> Doc
-sampleAExtACSL1 (_, C.ExtArray { C.externArrayName = name
-                          , C.externArrayIdx = idx 
-                          , C.externArrayTag = t     })
-  = 
-  text " assigns" <+> text (mkExtTmpTag name t) <+> semi
 
+--sampleAExtACSL2 :: (Int, C.ExtArray) -> Doc
+--sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
+--                          , C.externArrayIdx = idx 
+--                          , C.externArrayTag = t     })
+--  = 
+--  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
 
-sampleAExtACSL2 :: (Int, C.ExtArray) -> Doc
-sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
-                          , C.externArrayIdx = idx 
-                          , C.externArrayTag = t     })
-  = 
-  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
+--sampleAExt1 :: (Int, C.ExtArray) -> Doc
+--sampleAExt1 (_, C.ExtArray { C.externArrayName = name
+--                          , C.externArrayIdx = idx 
+--			  , C.externArrayElemType = tttt 
+--                          , C.externArrayTag = t     })
+--  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx
+-- 
+--  where 
+--  arrIdx :: C.Name -> C.Expr a -> Doc
+--  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
 
-sampleAExt1 :: (Int, C.ExtArray) -> Doc
-sampleAExt1 (_, C.ExtArray { C.externArrayName = name
+  -- Ok, because the analyzer disallows arrays or function calls in index
+  -- expressions, and we assign all variables before arrays.
+--  idxFCall :: C.Expr a -> Doc
+--  idxFCall e = 
+--    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
+
+sampleAExt :: (Int, C.ExtArray) -> Doc
+sampleAExt (_, C.ExtArray { C.externArrayName = name
                           , C.externArrayIdx = idx 
 			  , C.externArrayElemType = tttt 
                           , C.externArrayTag = t     })
-  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx
- 
+  = text (mkExtTmpTag name t) <+> equals <+> arrIdx name idx <> semi
   where 
   arrIdx :: C.Name -> C.Expr a -> Doc
   arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
@@ -312,48 +329,41 @@ sampleAExt1 (_, C.ExtArray { C.externArrayName = name
   idxFCall e = 
     mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
 
-sampleAExt :: (Int, C.ExtArray) -> Doc
-sampleAExt (_, C.ExtArray { C.externArrayName = name
-                          , C.externArrayIdx = idx 
-			  , C.externArrayElemType = tttt 
-                          , C.externArrayTag = t     })
-  = text (mkExtTmpTag name t) <+> equals <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
-
 --------------------------------------------------------------------------------
 
-sampleFExtACSL :: M.Map C.Tag C.ExtFun -> [Doc]
-sampleFExtACSL extFMap =
-  (map sampleFExtACSL1 (M.toList extFMap)) ++ (map sampleFExtACSL2 (M.toList extFMap))
+--sampleFExtACSL :: M.Map C.Tag C.ExtFun -> [Doc]
+--sampleFExtACSL extFMap =
+--  (map sampleFExtACSL1 (M.toList extFMap)) ++ (map sampleFExtACSL2 (M.toList extFMap))
 
-sampleFExtACSL1 :: (Int, C.ExtFun) -> Doc
-sampleFExtACSL1 (_, C.ExtFun { C.externFunName = name
-                        , C.externFunArgs = args 
-                        , C.externFunTag  = tag  })
-  = 
-  text " assigns" <+> text (mkExtTmpTag name tag) <> semi
-sampleFExtACSL2 :: (Int, C.ExtFun) -> Doc
-sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
-                        , C.externFunArgs = args 
-                        , C.externFunTag  = tag  })
-  = 
-  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
+--sampleFExtACSL1 :: (Int, C.ExtFun) -> Doc
+--sampleFExtACSL1 (_, C.ExtFun { C.externFunName = name
+--                        , C.externFunArgs = args 
+--                        , C.externFunTag  = tag  })
+--  = 
+--  text " assigns" <+> text (mkExtTmpTag name tag) <> semi
+--sampleFExtACSL2 :: (Int, C.ExtFun) -> Doc
+--sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
+--                        , C.externFunArgs = args 
+--                        , C.externFunTag  = tag  })
+--  = 
+--  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
 
 
 -- External functions
-sampleFExt1 :: (Int, C.ExtFun) -> Doc
-sampleFExt1 (_, C.ExtFun { C.externFunName = name
-                        , C.externFunArgs = args 
-                        , C.externFunType = tttt
-                        , C.externFunTag  = tag  })
-  = 
-  (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name tag)) <+> equals <+> text name <> lparen
-    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
-    <> rparen <> semi
-
-     where
-     mkArgCall :: (Int, C.UExpr) -> Doc 
-     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
-       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
+--sampleFExt1 :: (Int, C.ExtFun) -> Doc
+--sampleFExt1 (_, C.ExtFun { C.externFunName = name
+--                        , C.externFunArgs = args 
+--                        , C.externFunType = tttt
+--                        , C.externFunTag  = tag  })
+--  = 
+--  (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name tag)) <+> equals <+> text name <> lparen
+--    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
+--    <> rparen <> semi
+--
+--     where
+--     mkArgCall :: (Int, C.UExpr) -> Doc 
+--     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
+--       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
 
 sampleFExt :: (Int, C.ExtFun) -> Doc
 sampleFExt (_, C.ExtFun { C.externFunName = name
@@ -361,7 +371,13 @@ sampleFExt (_, C.ExtFun { C.externFunName = name
                         , C.externFunType = tttt
                         , C.externFunTag  = tag  })
   = 
-  text (mkExtTmpTag name tag) <+> equals <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
+  text (mkExtTmpTag name tag) <+> equals <+> text name <> lparen
+    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
+    <> rparen <> semi
+  where
+     mkArgCall :: (Int, C.UExpr) -> Doc 
+     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
+       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
 
 --------------------------------------------------------------------------------
 
@@ -417,7 +433,7 @@ updateObservers params MetaTable { observerInfoMap = observers }
 
 fireTriggers :: MetaTable -> Doc
 fireTriggers MetaTable { triggerInfoMap = triggers } 
-  = text "/*@\n assigns \\nothing; \n*/" $$
+  = -- text "/*@\n assigns \\nothing; \n*/" $$
   (mkFunc ("static " ++ triggersF) $ vcat $ map fireTrig (M.toList triggers))
 
   where
