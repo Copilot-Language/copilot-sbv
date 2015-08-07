@@ -213,7 +213,13 @@ c2sExpr_ e0 env inputs = case e0 of
 
         getSBV t1 ExtInput { extType = t2
                            , extInput = v }
-          = let Just p = t2 =~= t1 in
+          = let Just p = t2 =~= t1 in -- Code breaks here, because we pass fields from MetaTable.hs as
+                                      -- ExternStructs (c2Args_). These are then passed into Code.hs,
+                                      -- where argToInput in the case of ExternStruct ASSUMES that
+                                      -- all ExternStructs are of type Bool, when the actual field 
+                                      -- is not necessarily a Bool. Thus, we need to figure out how to
+                                      -- pass the Type of the field to argToInput, so that the types
+                                      -- in Copilot2SBV.hs match up
             coerce (cong p) v
       _ -> badUsage "Non-struct is the first parameter of (#) struct field access"
 
