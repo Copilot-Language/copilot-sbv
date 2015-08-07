@@ -159,7 +159,7 @@ transformExpr e0 = case e0 of
   Drop t k id                    -> Drop t k id
   Local t1 t2 name e1 e2         -> Local t1 t2 name (transformExpr e1) (transformExpr e2) 
   Var t name                     -> Var t name
-  ExternVar t name e             -> ExternVar t name e
+  ExternVar t name e yy          -> ExternVar t name e yy
   ExternFun t name args contxt yy-> ExternFun t name (map transformUExpr args) contxt yy
   ExternArray t1 t2 name 
               size idx context yy-> ExternArray t1 t2 name size (transformExpr idx) context yy
