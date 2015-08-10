@@ -27,6 +27,7 @@ import qualified Copilot.Compile.SBV.Transform as T
 import qualified Copilot.Compile.SBV.ACSLproof as T
 
 import System.FilePath (combine)
+import qualified Debug.Trace as DB
 
 --------------------------------------------------------------------------------
 

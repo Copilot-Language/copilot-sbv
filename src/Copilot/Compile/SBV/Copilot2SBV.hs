@@ -31,8 +31,8 @@ import qualified Copilot.Core as C
 import qualified Copilot.Core.Type as C
 import Copilot.Core.Error (badUsage, impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
-import Copilot.Core.Type.Show (showType)
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternVar t name _ _ -> 
+  C.ExternVar t name _ -> 
     getSBV t ext
 
     where 
@@ -197,19 +197,9 @@ c2sExpr_ e0 env inputs = case e0 of
         where
         getStrField :: ExtInput
         getStrField =
-          let field = mkExtTmpTag name tag in
-          case lookup name (extVars inputs) of
+          case lookup (mkExtTmpTag name tag) (extStrs inputs) of
             Just val  -> val
-            Nothing   ->
-              case lookup field (extArrs inputs) of
-                Just val  -> val
-                Nothing   ->
-                  case lookup field (extFuns inputs) of
-                    Just val  -> val
-                    Nothing   ->
-                      case lookup field (extStrs inputs) of
-                        Just val  -> val
-                        Nothing   -> badUsage ("Struct field is undefined: "++str_name++"."++name)
+            Nothing   -> badUsage ("Struct field is undefined: "++str_name++"."++name)
 
         getSBV t1 ExtInput { extType = t2
                            , extInput = v }

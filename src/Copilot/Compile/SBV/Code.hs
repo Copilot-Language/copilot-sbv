@@ -31,6 +31,7 @@ import qualified Data.SBV as S
 import qualified Data.Map as M
 import Control.Monad (foldM)
 import Prelude hiding (id)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -177,7 +178,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 -- next index to sample the fields of a struct.
 getExtStrs :: MetaTable -> [SBVFunc]
 getExtStrs meta@(MetaTable { externStrInfoMap = exts })
-  = concatMap mkExtS (M.toList exts)
+  = concatMap mkExtS (trace ("YOYOYO") $ M.toList exts)
   
   where
   mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
@@ -185,9 +186,9 @@ getExtStrs meta@(MetaTable { externStrInfoMap = exts })
                          , C.externStructTag  = tag
                          , C.externStructArgs = sargs })
     = 
-    map go (mkSArgIdx sargs)
+    trace ("BBBB") $ map go (mkSArgIdx sargs)
     where
-    go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
+    go (i,e) = trace ("CCCC") $ mkArgCall meta (mkExtFunArgFn i name tag) e
 
 --------------------------------------------------------------------------------
 
@@ -210,13 +211,13 @@ mkInputs meta args =
  
   -- External variables
   argToInput acc (Extern name) = 
-    let extInfos = externVarInfoMap meta in
-    let Just extInfo = M.lookup (name) extInfos in
+    let extInfos = trace ("suifwe" ++ show name ++ "\n" ++ (show $ map fst $ M.toList $ externVarInfoMap meta)) $ externVarInfoMap meta in
+    let Just extInfo = trace ("lkaeffljk" ++ show name) $ M.lookup (name) extInfos in
     mkExtInput extInfo
 
     where 
     mkExtInput :: C.ExtVar -> S.SBVCodeGen Inputs
-    mkExtInput (C.ExtVar _ _ C.UType { C.uTypeType = t }) = do
+    mkExtInput (C.ExtVar _ C.UType { C.uTypeType = t }) = do
       ext <- mkExtInput_ t (mkExtTmpVar name)
       return acc { extVars = (name, (ExtInput { extInput = ext 
                                               , extType  = t })
@@ -262,7 +263,7 @@ mkInputs meta args =
 
   -- Structs
   argToInput acc (ExternStruct name tag) =
-    let extInfos = externStrInfoMap meta in
+    let extInfos = trace ("aflfeEEE" ++ show name) (externStrInfoMap meta) in
     let Just extInfo = (M.lookup tag extInfos) in
     mkExtInput extInfo
 

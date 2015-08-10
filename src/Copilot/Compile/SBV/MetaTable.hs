@@ -29,7 +29,7 @@ import Data.List (nub)
 import Data.Maybe (fromJust)
 import qualified Data.Map as M
 import Prelude hiding (id)
-import Copilot.Core.Type.Show (showType)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ allocMetaTable spec =
 
   where
   streamInfoMap_    = M.fromList $ map allocStream     (C.specStreams spec)
-  externVarInfoMap_ = M.fromList $ map allocExternVars (C.externVars spec)
+  externVarInfoMap_ = trace ("hahah"++(show $ map fst $ map allocExternVars (C.externVars spec))) $ M.fromList $ map allocExternVars (C.externVars spec)
   externArrInfoMap_ = M.fromList $ map allocExternArrs (C.externArrays spec)
   externFunInfoMap_ = M.fromList $ map allocExternFuns (C.externFuns spec)
   externStrInfoMap_ = M.fromList $ map allocExternStrs (C.externStructs spec)
@@ -109,7 +109,7 @@ allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
 --------------------------------------------------------------------------------
 
 allocExternStrs :: C.ExtStruct -> (C.Tag, C.ExtStruct)
-allocExternStrs struct = (tagExtract $ C.externStructTag struct, struct)
+allocExternStrs struct = (tagExtract $ C.externStructTag struct, trace "WASSUP" $ struct)
 
 --------------------------------------------------------------------------------
 
@@ -184,7 +184,7 @@ c2Args_ e0 = case e0 of
 
   C.Var _ _              -> []
 
-  C.ExternVar _ name _ _ -> [Extern name]
+  C.ExternVar _ name _   -> [trace ("jaaepoji"++show name) Extern name]
 
   C.ExternFun   _ name args _ tag -> 
     (ExternFun name (tagExtract tag)) : 
@@ -192,17 +192,15 @@ c2Args_ e0 = case e0 of
                      -> c2Args expr) 
                 args
 
-  C.ExternArray _ _ name _ _ _ tag  -> [ExternArr name (tagExtract tag)] 
+  C.ExternArray _ _ name _ _ _ tag  -> trace ("~~~"++name) $ [ExternArr name (tagExtract tag)] 
 
   C.ExternStruct _ name sargs tag -> []--concatMap (c2Sargs_ name (tagExtract tag)) sargs
                                      -- All fields are passed to SBV as 'structs' but with their field label
 
   C.GetField _ _ struct name ->
     case struct of
-      C.ExternStruct _ sname sargs tag -> if foldr (\(f, _) a -> (f==name)||a) False sargs then
-                                         (ExternStruct name (tagExtract tag)) : -- Uses field name
-                                         concatMap (\(_, C.UExpr { C.uExprType = t, C.uExprExpr = expr }) -> c2Args expr) sargs
-                                         else []
+      C.ExternStruct _ sname sargs tag -> (ExternStruct name (tagExtract tag)) :
+                                         concatMap (\(_, C.UExpr { C.uExprExpr = expr }) -> c2Args expr) sargs      
       _                                -> []
 
   C.Op1 _ e        -> c2Args_ e
@@ -212,5 +210,14 @@ c2Args_ e0 = case e0 of
   C.Op3 _ e1 e2 e3 -> c2Args_ e1 ++ c2Args_ e2 ++ c2Args_ e3
 
   C.Label _ _ e    -> c2Args_ e
+
+--------------------------------------------------------------------------------
+
+fixArgName :: C.Name -> Arg -> Arg
+fixArgName sname (Extern name) = trace ("lhfea" ++ sname++"."++name) $ Extern (sname++"."++name)
+fixArgName sname (ExternFun name tag) = trace ("lhfadea" ++ sname++"."++name) $ ExternFun (sname++"."++name) tag
+fixArgName sname (ExternArr name tag) = trace ("lhwqfea" ++ sname++"."++name) $ ExternArr (sname++"."++name) tag
+fixArgName sname (ExternStruct name tag) = trace ("lhfhrtea" ++ sname++"."++name) $ ExternStruct (sname++"."++name) tag
+fixArgName sname (Queue id) = Queue id
 
 --------------------------------------------------------------------------------
