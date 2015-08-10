@@ -195,7 +195,6 @@ c2Args_ e0 = case e0 of
   C.ExternArray _ _ name _ _ _ tag  -> trace ("~~~"++name) $ [ExternArr name (tagExtract tag)] 
 
   C.ExternStruct _ name sargs tag -> []--concatMap (c2Sargs_ name (tagExtract tag)) sargs
-                                     -- All fields are passed to SBV as 'structs' but with their field label
 
   C.GetField _ _ struct name ->
     case struct of
