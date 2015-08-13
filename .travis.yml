@@ -1,5 +1,3 @@
-before_install:
-
 # NB: don't set `language: haskell` here
 
 # The following enables several GHC versions to be tested; often it's enough to
