@@ -32,7 +32,6 @@ import qualified Copilot.Core.Type as C
 import Copilot.Core.Error (badUsage, impossible)
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 import Data.Maybe (fromJust)
-import Debug.Trace
 
 --------------------------------------------------------------------------------
 

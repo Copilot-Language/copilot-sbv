@@ -179,7 +179,7 @@ c2Args_ e0 = case e0 of
                      -> c2Args expr) 
                 args
 
-  C.ExternArray _ _ name _ _ _ tag  -> trace ("~~~"++name) $ [ExternArr name (tagExtract tag)] 
+  C.ExternArray _ _ name _ _ _ tag  ->[ExternArr name (tagExtract tag)] 
 
   C.Op1 _ e        -> c2Args_ e
 
