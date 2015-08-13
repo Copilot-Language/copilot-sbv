@@ -9,7 +9,6 @@ module Copilot.Compile.SBV.MetaTable
   , ExternVarInfoMap
   , ExternArrInfoMap
   , ExternFunInfoMap
-  , ExternStrInfoMap
   , TriggerInfo (..)
   , TriggerInfoMap
   , ObserverInfo (..)
@@ -37,7 +36,6 @@ type StreamInfoMap = Map C.Id C.Stream
 type ExternVarInfoMap = Map C.Name C.ExtVar
 type ExternArrInfoMap = Map C.Tag C.ExtArray
 type ExternFunInfoMap = Map C.Tag C.ExtFun
-type ExternStrInfoMap = Map C.Tag C.ExtStruct
 
 --------------------------------------------------------------------------------
 
@@ -61,7 +59,6 @@ data MetaTable = MetaTable
   , externVarInfoMap  :: ExternVarInfoMap
   , externArrInfoMap  :: ExternArrInfoMap
   , externFunInfoMap  :: ExternFunInfoMap
-  , externStrInfoMap  :: ExternStrInfoMap
   , triggerInfoMap    :: TriggerInfoMap
   , observerInfoMap   :: ObserverInfoMap }
 
@@ -73,7 +70,6 @@ allocMetaTable spec =
             , externVarInfoMap = externVarInfoMap_
             , externArrInfoMap = externArrInfoMap_
             , externFunInfoMap = externFunInfoMap_
-            , externStrInfoMap = externStrInfoMap_
             , triggerInfoMap   = triggerInfoMap_
             , observerInfoMap  = observerInfoMap_ }
 
@@ -82,7 +78,6 @@ allocMetaTable spec =
   externVarInfoMap_ = trace ("hahah"++(show $ map fst $ map allocExternVars (C.externVars spec))) $ M.fromList $ map allocExternVars (C.externVars spec)
   externArrInfoMap_ = M.fromList $ map allocExternArrs (C.externArrays spec)
   externFunInfoMap_ = M.fromList $ map allocExternFuns (C.externFuns spec)
-  externStrInfoMap_ = M.fromList $ map allocExternStrs (C.externStructs spec)
   triggerInfoMap_   = M.fromList $ map allocTrigger    (C.specTriggers spec)
   observerInfoMap_  = M.fromList $ map allocObserver   (C.specObservers spec)
       
@@ -105,11 +100,6 @@ allocExternArrs arr = (tagExtract $ C.externArrayTag arr, arr)
 
 allocExternFuns :: C.ExtFun -> (C.Tag, C.ExtFun)
 allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
-
---------------------------------------------------------------------------------
-
-allocExternStrs :: C.ExtStruct -> (C.Tag, C.ExtStruct)
-allocExternStrs struct = (tagExtract $ C.externStructTag struct, trace "WASSUP" $ struct)
 
 --------------------------------------------------------------------------------
 
@@ -140,7 +130,6 @@ allocObserver C.Observer { C.observerName = name
 data Arg = Extern       C.Name
          | ExternFun    C.Name C.Tag
          | ExternArr    C.Name C.Tag
-         | ExternStruct C.Name C.Tag
          | Queue        C.Id
   deriving Eq
 
@@ -149,7 +138,6 @@ argToCall :: Arg -> [String]
 argToCall (Extern name)           = [mkExtTmpVar name]
 argToCall (ExternArr name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternFun name tag)    = [mkExtTmpTag name (Just tag)]
-argToCall (ExternStruct name tag) = [mkExtTmpTag name (Just tag)]
 argToCall (Queue id)              = [ mkQueueVar id 
                                     , mkQueuePtrVar id ]
 
@@ -194,14 +182,6 @@ c2Args_ e0 = case e0 of
 
   C.ExternArray _ _ name _ _ _ tag  -> trace ("~~~"++name) $ [ExternArr name (tagExtract tag)] 
 
-  C.ExternStruct _ name sargs tag -> []--concatMap (c2Sargs_ name (tagExtract tag)) sargs
-
-  C.GetField _ _ struct name ->
-    case struct of
-      C.ExternStruct _ sname sargs tag -> (ExternStruct name (tagExtract tag)) :
-                                         concatMap (\(_, C.UExpr { C.uExprExpr = expr }) -> c2Args expr) sargs      
-      _                                -> []
-
   C.Op1 _ e        -> c2Args_ e
 
   C.Op2 _ e1 e2    -> c2Args_ e1 ++ c2Args_ e2
@@ -210,13 +190,3 @@ c2Args_ e0 = case e0 of
 
   C.Label _ _ e    -> c2Args_ e
 
---------------------------------------------------------------------------------
-
-fixArgName :: C.Name -> Arg -> Arg
-fixArgName sname (Extern name) = trace ("lhfea" ++ sname++"."++name) $ Extern (sname++"."++name)
-fixArgName sname (ExternFun name tag) = trace ("lhfadea" ++ sname++"."++name) $ ExternFun (sname++"."++name) tag
-fixArgName sname (ExternArr name tag) = trace ("lhwqfea" ++ sname++"."++name) $ ExternArr (sname++"."++name) tag
-fixArgName sname (ExternStruct name tag) = trace ("lhfhrtea" ++ sname++"."++name) $ ExternStruct (sname++"."++name) tag
-fixArgName sname (Queue id) = Queue id
-
---------------------------------------------------------------------------------
