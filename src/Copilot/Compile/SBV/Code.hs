@@ -11,7 +11,6 @@ module Copilot.Compile.SBV.Code
   , fireTriggers
   , getExtArrs
   , getExtFuns
-  , getExtStrs
   ) where
 
 import Copilot.Compile.SBV.Copilot2SBV
@@ -172,26 +171,6 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 
 --------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
-
--- Generate an SBV function that calculates the Copilot expression to get the
--- next index to sample the fields of a struct.
-getExtStrs :: MetaTable -> [SBVFunc]
-getExtStrs meta@(MetaTable { externStrInfoMap = exts })
-  = concatMap mkExtS (trace ("YOYOYO") $ M.toList exts)
-  
-  where
-  mkExtS :: (Int, C.ExtStruct) -> [SBVFunc]
-  mkExtS (_, C.ExtStruct { C.externStructName = name
-                         , C.externStructTag  = tag
-                         , C.externStructArgs = sargs })
-    = 
-    trace ("BBBB") $ map go (mkSArgIdx sargs)
-    where
-    go (i,e) = trace ("CCCC") $ mkArgCall meta (mkExtFunArgFn i name tag) e
-
---------------------------------------------------------------------------------
-
 -- mkInputs takes the datatype containing the entire spec (meta) as well as all
 -- possible arguments to the SBV function generating the expression.  From those
 -- arguments, it then generates in the SBVCodeGen monad---the actual Inputs---
@@ -258,24 +237,6 @@ mkInputs meta args =
                                       { extInput = v
                                       , extType  = t }
                              ) : extFuns acc }
-
-  -----------------------------------------
-
-  -- Structs
-  argToInput acc (ExternStruct name tag) =
-    let extInfos = trace ("aflfeEEE" ++ show name) (externStrInfoMap meta) in
-    let Just extInfo = (M.lookup tag extInfos) in
-    mkExtInput extInfo
-
-    where
-    mkExtInput :: C.ExtStruct -> S.SBVCodeGen Inputs
-    mkExtInput C.ExtStruct {}
-      = do
-      v <- mkExtInput_ C.Bool (mkExtTmpTag name (Just tag))
-      return acc { extStrs = ((mkExtTmpTag name (Just tag)), ExtInput 
-                                      { extInput = v
-                                      , extType  = C.Bool }
-                             ) : extStrs acc }
 
   -----------------------------------------
 
