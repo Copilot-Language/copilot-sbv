@@ -180,7 +180,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 
 mkInputs :: MetaTable -> [Arg] -> S.SBVCodeGen Inputs
 mkInputs meta args = 
-  foldM argToInput (Inputs [] [] [] [] []) args 
+  foldM argToInput (Inputs [] [] [] []) args 
 
   where
   argToInput :: Inputs -> Arg -> S.SBVCodeGen Inputs
