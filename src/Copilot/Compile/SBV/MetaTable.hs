@@ -34,6 +34,7 @@ import Prelude hiding (id)
 type StreamInfoMap = Map C.Id C.Stream
 type ExternVarInfoMap = Map C.Name C.ExtVar
 type ExternArrInfoMap = Map C.Tag C.ExtArray
+type ExternMatInfoMap = Map C.Tag C.ExtMatrix
 type ExternFunInfoMap = Map C.Tag C.ExtFun
 
 --------------------------------------------------------------------------------
@@ -57,6 +58,7 @@ data MetaTable = MetaTable
   { streamInfoMap     :: StreamInfoMap
   , externVarInfoMap  :: ExternVarInfoMap
   , externArrInfoMap  :: ExternArrInfoMap
+  , externMatInfoMap  :: ExternMatInfoMap
   , externFunInfoMap  :: ExternFunInfoMap
   , triggerInfoMap    :: TriggerInfoMap
   , observerInfoMap   :: ObserverInfoMap }
@@ -68,6 +70,7 @@ allocMetaTable spec =
   MetaTable { streamInfoMap    = streamInfoMap_
             , externVarInfoMap = externVarInfoMap_
             , externArrInfoMap = externArrInfoMap_
+            , externMatInfoMap = externMatInfoMap_
             , externFunInfoMap = externFunInfoMap_
             , triggerInfoMap   = triggerInfoMap_
             , observerInfoMap  = observerInfoMap_ }
@@ -76,10 +79,11 @@ allocMetaTable spec =
   streamInfoMap_    = M.fromList $ map allocStream     (C.specStreams spec)
   externVarInfoMap_ = M.fromList $ map allocExternVars (C.externVars spec)
   externArrInfoMap_ = M.fromList $ map allocExternArrs (C.externArrays spec)
+  externMatInfoMap_ = M.fromList $ map allocExternMats (C.externMats spec)
   externFunInfoMap_ = M.fromList $ map allocExternFuns (C.externFuns spec)
   triggerInfoMap_   = M.fromList $ map allocTrigger    (C.specTriggers spec)
   observerInfoMap_  = M.fromList $ map allocObserver   (C.specObservers spec)
-      
+
 --------------------------------------------------------------------------------
 
 allocStream :: C.Stream -> (C.Id, C.Stream)
@@ -97,6 +101,11 @@ allocExternArrs arr = (tagExtract $ C.externArrayTag arr, arr)
 
 --------------------------------------------------------------------------------
 
+allocExternMats :: C.ExtMatrix -> (C.Tag, C.ExtMatrix)
+allocExternMats mat = (tagExtract $ C.externMatTag mat, mat)
+
+--------------------------------------------------------------------------------
+
 allocExternFuns :: C.ExtFun -> (C.Tag, C.ExtFun)
 allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
 
@@ -105,12 +114,12 @@ allocExternFuns fun = (tagExtract $ C.externFunTag fun, fun)
 allocTrigger :: C.Trigger -> (C.Name, TriggerInfo)
 allocTrigger C.Trigger { C.triggerName  = name
                        , C.triggerGuard = guard
-                       , C.triggerArgs  = args } 
+                       , C.triggerArgs  = args }
   =
   let mkArgArgs :: C.UExpr -> [String]
       mkArgArgs C.UExpr { C.uExprExpr = e } = collectArgs e in
-  let triggerInfo = 
-        TriggerInfo { guardArgs      = collectArgs guard 
+  let triggerInfo =
+        TriggerInfo { guardArgs      = collectArgs guard
                     , triggerArgArgs = map mkArgArgs args } in
   (name, triggerInfo)
 
@@ -118,8 +127,8 @@ allocTrigger C.Trigger { C.triggerName  = name
 
 allocObserver :: C.Observer -> (C.Name, ObserverInfo)
 allocObserver C.Observer { C.observerName = name
-                         , C.observerExpr = e } 
-  = 
+                         , C.observerExpr = e }
+  =
   let observerInfo = ObserverInfo { observerArgs = collectArgs e } in
   (name, observerInfo)
 
@@ -129,6 +138,7 @@ allocObserver C.Observer { C.observerName = name
 data Arg = Extern       C.Name
          | ExternFun    C.Name C.Tag
          | ExternArr    C.Name C.Tag
+         | ExternMat    C.Name C.Tag
          | Queue        C.Id
   deriving Eq
 
@@ -136,8 +146,9 @@ data Arg = Extern       C.Name
 argToCall :: Arg -> [String]
 argToCall (Extern name)           = [mkExtTmpVar name]
 argToCall (ExternArr name tag)    = [mkExtTmpTag name (Just tag)]
+argToCall (ExternMat name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternFun name tag)    = [mkExtTmpTag name (Just tag)]
-argToCall (Queue id)              = [ mkQueueVar id 
+argToCall (Queue id)              = [ mkQueueVar id
                                     , mkQueuePtrVar id ]
 
 --------------------------------------------------------------------------------
@@ -163,23 +174,25 @@ c2Args e = nub $ c2Args_ e
 
 c2Args_ :: C.Expr a -> [Arg]
 c2Args_ e0 = case e0 of
-  C.Const _ _            -> [] 
+  C.Const _ _            -> []
 
   C.Drop _ _ id          -> [ Queue id ]
- 
+
   C.Local _ _ _ e1 e2    -> c2Args_ e1 ++ c2Args_ e2
 
   C.Var _ _              -> []
 
   C.ExternVar _ name _   -> [Extern name]
 
-  C.ExternFun   _ name args _ tag -> 
-    (ExternFun name (tagExtract tag)) : 
-      concatMap (\C.UExpr { C.uExprExpr = expr } 
-                     -> c2Args expr) 
+  C.ExternFun   _ name args _ tag ->
+    (ExternFun name (tagExtract tag)) :
+      concatMap (\C.UExpr { C.uExprExpr = expr }
+                     -> c2Args expr)
                 args
 
-  C.ExternArray _ _ name _ _ _ tag  ->[ExternArr name (tagExtract tag)] 
+  C.ExternArray _ _ name _ _ _ tag  ->[ExternArr name (tagExtract tag)]
+
+  C.ExternMatrix _ _ name _ _ _ _ _ tag  ->[ExternMat name (tagExtract tag)]
 
   C.Op1 _ e        -> c2Args_ e
 
