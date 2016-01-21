@@ -12,6 +12,7 @@ module Copilot.Compile.SBV.Common
   , mkExtTmpVar
   , mkExtTmpTag
   , mkExtArrFn
+  , mkExtMatFn
   , mkExtFunArgFn
   , mkObserverFn
   , mkTriggerGuardFn
@@ -30,13 +31,13 @@ mkTmpStVar :: Id -> String
 mkTmpStVar = mkVar "tmp_"
 
 mkUpdateStFn :: Id -> String
-mkUpdateStFn = mkVar "update_state_" 
+mkUpdateStFn = mkVar "update_state_"
 
 mkQueueVar :: Id -> String
-mkQueueVar = mkVar "queue_" 
+mkQueueVar = mkVar "queue_"
 
 mkQueuePtrVar :: Id -> String
-mkQueuePtrVar = mkVar "ptr_" 
+mkQueuePtrVar = mkVar "ptr_"
 
 mkExtTmpVar :: String -> String
 mkExtTmpVar = ("ext_" ++)
@@ -47,8 +48,11 @@ mkExtTmpTag name tag = "ext_" ++ name ++ "_" ++ show (tagExtract tag)
 mkExtArrFn :: String -> String
 mkExtArrFn = (++) "ext_arr_"
 
+mkExtMatFn :: String -> String
+mkExtMatFn = (++) "ext_mat_"
+
 mkExtFunArgFn :: Int -> String -> Maybe Tag -> String
-mkExtFunArgFn i nm tag = 
+mkExtFunArgFn i nm tag =
   "ext_" ++ nm ++ "_" ++ show (tagExtract tag) ++ "_arg" ++ show i
 
 mkObserverFn :: String -> String
