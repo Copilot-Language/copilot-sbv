@@ -196,7 +196,7 @@ transformOp1 op e = case op of
   Abs   t      -> Op2 (Mul t) (transformExpr e) (transformExpr $ Label t "?absolute_value_splitting" $ Op1 (Sign t) $ e)
   Sign  t      -> Op1 (Sign t) $ transformExpr e
   -- Fractional operators.
-  Recip a      -> Op2 (Fdiv a) (Const a 1.0) (transformExpr e)
+  Recip t      -> Op2 (Fdiv t) (Const t 1.0) (transformExpr e)
   -- Floating operators.
   Exp Float    -> ExternFun Float "expf"
                     [UExpr { uExprExpr = transformExpr e, uExprType = Float }] Nothing Nothing
