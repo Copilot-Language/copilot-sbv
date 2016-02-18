@@ -83,6 +83,15 @@ c2sExpr inputs e = c2sExpr_ e M.empty inputs
 
 --------------------------------------------------------------------------------
 
+getSBV :: C.Type a -> ExtInput -> S.SBV a
+getSBV t1 ExtInput { extType  = t2
+                   , extInput = v }
+  = let Just p = t2 =~= t1 in
+    coerce (cong p) v
+
+
+
+
 -- Translate a Copilot expression into an SBV expression.  The environment
 -- passed in is for tracking let expression bindings (in the Copilot language),
 -- and the list of inputs are all the external things needed as input to the SBV
@@ -134,59 +143,22 @@ c2sExpr_ e0 env inputs = case e0 of
   ----------------------------------------------------
 
   C.ExternVar t name _ ->
-    getSBV t ext
-
-    where
-    ext :: ExtInput
-    ext = lookupInput name (extVars inputs)
-
-    getSBV :: C.Type a -> ExtInput -> S.SBV a
-    getSBV t1 ExtInput { extInput = ext'
-                       , extType  = t2 } =
-      let Just p = t2 =~= t1 in
-      coerce (cong p) ext'
+    getSBV t (lookupInput name (extVars inputs))
 
   ----------------------------------------------------
 
   C.ExternArray _ t name _ _ _ tag ->
-    getSBV t getExtArr
-
-    where
-    getExtArr :: ExtInput
-    getExtArr = lookupInput (mkExtTmpTag name (tag)) (extArrs inputs)
-
-    getSBV t1 ExtInput { extInput  = v
-                       , extType = t2 }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extArrs inputs))
 
   ----------------------------------------------------
 
   C.ExternMatrix _ t name _ _ _ _ _ tag ->
-    getSBV t getExtMat
-
-    where
-    getExtMat :: ExtInput
-    getExtMat = lookupInput (mkExtTmpTag name (tag)) (extMats inputs)
-
-    getSBV t1 ExtInput { extInput  = v
-                       , extType = t2 }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extMats inputs))
 
   ----------------------------------------------------
 
   C.ExternFun t name _ _ tag ->
-    getSBV t getExtFun
-
-    where
-    getExtFun :: ExtInput
-    getExtFun = lookupInput (mkExtTmpTag name (tag)) (extFuns inputs)
-
-    getSBV t1 ExtInput { extType  = t2
-                       , extInput = v }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extFuns inputs))
 
   ----------------------------------------------------
 
