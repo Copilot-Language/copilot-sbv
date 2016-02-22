@@ -48,12 +48,13 @@ updateStates meta (C.Spec streams _ _ _) =
   where
   updateStreamState :: C.Stream -> SBVFunc
   updateStreamState C.Stream { C.streamId       = id
-                             , C.streamBuffer   = buffer
                              , C.streamExpr     = e
                              , C.streamExprType = t1
                                                       }
     = mkSBVFunc (mkUpdateStFn id) $ do
-        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e)
+          ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
+          ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta)
@@ -83,7 +84,9 @@ updateObservers meta (C.Spec _ observers _ _) =
     where
     mkSBVExp =
       do
-        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e)
+          ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
+          ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         W.SymWordInst <- return (W.symWordInst t)
@@ -106,7 +109,8 @@ fireTriggers meta (C.Spec _ _ triggers _) =
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
     mkSBVExp = do
-      S.cgAddDecl [("/*test 006*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False guard) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 006*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False guard)
+        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args guard)
       let e = c2sExpr inputs guard
       S.cgReturn e
@@ -158,7 +162,6 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
 
 -- Generate an SBV function that calculates the Copilot expression to get the
 -- next index to sample an external matrix.
--- Laura: to be fixed --
 
 getExtMats :: MetaTable -> [SBVFunc]
 getExtMats meta@(MetaTable { externMatInfoMap = mats })
@@ -178,11 +181,14 @@ getExtMats meta@(MetaTable { externMatInfoMap = mats })
       S.cgAddDecl [("/*test 002*/\n/*DotBegin\n"
         ++ (PD.prettyPrintExprDot False idxr)
         ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
-        ++ (PJ.render $ ppExpr meta idxr) ++ ";\n*/")]
-      inputs <- mkInputs meta (c2Args idxr)
+        ++ (PJ.render $ ppExpr meta idxr) ++ ";\n*/"
+        ++ (PD.prettyPrintExprDot False idxc)
+        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
+        ++ (PJ.render $ ppExpr meta idxc) ++ ";\n*/" )]
+      inputs <- mkInputs meta ((c2Args idxr)++(c2Args idxc))
       W.SymWordInst <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
-      S.cgReturn (c2sExpr inputs idxr)
+      S.cgReturnArr [(c2sExpr inputs idxr), (c2sExpr inputs idxc)]
 
 --------------------------------------------------------------------------------
 

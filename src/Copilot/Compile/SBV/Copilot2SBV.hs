@@ -78,8 +78,10 @@ lookupInput id prs =
 
 --------------------------------------------------------------------------------
 
-c2sExpr :: Inputs -> C.Expr a -> S.SBV a
-c2sExpr inputs e = c2sExpr_ e M.empty inputs
+noFloatOpsErr :: String -> a
+noFloatOpsErr op =
+  badUsage ("The operation you used is not supported by the SBV backend: "
+         ++ "operator " ++ op ++ " not supported. Please change it with your math skills to something supported.")
 
 --------------------------------------------------------------------------------
 
@@ -89,13 +91,18 @@ getSBV t1 ExtInput { extType  = t2
   = let Just p = t2 =~= t1 in
     coerce (cong p) v
 
+--------------------------------------------------------------------------------
 
+c2sExpr :: Inputs -> C.Expr a -> S.SBV a
+c2sExpr inputs e = c2sExpr_ e M.empty inputs
 
+-------------------------------------------------------------------------------
 
 -- Translate a Copilot expression into an SBV expression.  The environment
 -- passed in is for tracking let expression bindings (in the Copilot language),
 -- and the list of inputs are all the external things needed as input to the SBV
 -- function.
+
 c2sExpr_ :: C.Expr a -> Env -> Inputs -> S.SBV a
 c2sExpr_ e0 env inputs = case e0 of
 
@@ -186,25 +193,14 @@ c2sExpr_ e0 env inputs = case e0 of
 
 --------------------------------------------------------------------------------
 
-noFloatOpsErr :: String -> a
-noFloatOpsErr op =
-  badUsage ("The operation you used is not supported by the SBV backend: "
-         ++ "operator " ++ op ++ " not supported. Please change it with your math skills to something supported.")
-
---------------------------------------------------------------------------------
-
 c2sOp1 :: C.Op1 a b -> S.SBV a -> S.SBV b
 c2sOp1 op = case op of
   Not     -> (S.bnot)
-  Abs   t -> case W.symWordInst t of
-                       W.SymWordInst         -> abs
-  Sign  t -> case W.symWordInst t of
-                       W.SymWordInst         -> signum
-  BwNot t -> case W.bitsInst    t of
-                       W.BitsInst            -> (S.complement)
+  Abs   t -> case W.symWordInst t of W.SymWordInst -> abs
+  Sign  t -> case W.symWordInst t of W.SymWordInst -> signum
+  BwNot t -> case W.bitsInst t of W.BitsInst -> (S.complement)
 
-  Cast t0 t1 -> case W.castInst t0 t1 of
-                  W.CastInst -> W.sbvCast
+  Cast t0 t1 -> case W.castInst t0 t1 of W.CastInst -> W.sbvCast
 
   Recip _      -> noFloatOpsErr "recip"
 
