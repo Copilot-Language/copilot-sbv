@@ -12,7 +12,7 @@ module Copilot.Compile.SBV.Copilot2SBV
   , ExtInput(..)
   , QueInput(..)
   , QueueIn(..)
-  ) 
+  )
 where
 
 import Prelude hiding (id)
@@ -42,21 +42,22 @@ type ExtQue = (C.Id, QueInput)
 data Inputs = Inputs
   { extVars  :: [Ext] -- external variables
   , extArrs  :: [Ext] -- external arrays
+  , extMats  :: [Ext] -- external matrices
   , extFuns  :: [Ext] -- external functions
   , extQues  :: [ExtQue] }
 
 -- External input -- variables, arrays, and functions
-data ExtInput = forall a. ExtInput 
+data ExtInput = forall a. ExtInput
   { extInput :: S.SBV a
   , extType  :: C.Type a }
 
 -- Stream queues
-data QueInput = forall a. QueInput 
+data QueInput = forall a. QueInput
   { arrInput :: QueueIn a }
 
 data QueueIn a = QueueIn
   { queue    :: [S.SBV a]
-  , quePtr   :: S.SBV Q.QueueSize 
+  , quePtr   :: S.SBV Q.QueueSize
   , arrType  :: C.Type a }
 
 --------------------------------------------------------------------------------
@@ -77,15 +78,31 @@ lookupInput id prs =
 
 --------------------------------------------------------------------------------
 
+noFloatOpsErr :: String -> a
+noFloatOpsErr op =
+  badUsage ("The operation you used is not supported by the SBV backend: "
+         ++ "operator " ++ op ++ " not supported. Please change it with your math skills to something supported.")
+
+--------------------------------------------------------------------------------
+
+getSBV :: C.Type a -> ExtInput -> S.SBV a
+getSBV t1 ExtInput { extType  = t2
+                   , extInput = v }
+  = let Just p = t2 =~= t1 in
+    coerce (cong p) v
+
+--------------------------------------------------------------------------------
+
 c2sExpr :: Inputs -> C.Expr a -> S.SBV a
 c2sExpr inputs e = c2sExpr_ e M.empty inputs
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- Translate a Copilot expression into an SBV expression.  The environment
 -- passed in is for tracking let expression bindings (in the Copilot language),
 -- and the list of inputs are all the external things needed as input to the SBV
 -- function.
+
 c2sExpr_ :: C.Expr a -> Env -> Inputs -> S.SBV a
 c2sExpr_ e0 env inputs = case e0 of
 
@@ -105,7 +122,7 @@ c2sExpr_ e0 env inputs = case e0 of
                                            , arrType = t2 } } =
       let Just p = t2 =~= t1 in
       case W.symWordInst t2 of
-        W.SymWordInst -> 
+        W.SymWordInst ->
           case W.hasSignAndSizeInst t2 of
             W.HasSignAndSizeInst ->
               coerce (cong p) (Q.lookahead i que' qPtr)
@@ -132,47 +149,24 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternVar t name _ -> 
-    getSBV t ext
-
-    where 
-    ext :: ExtInput
-    ext = lookupInput name (extVars inputs)
-
-    getSBV :: C.Type a -> ExtInput -> S.SBV a
-    getSBV t1 ExtInput { extInput = ext'
-                       , extType  = t2 } =
-      let Just p = t2 =~= t1 in
-      coerce (cong p) ext'
+  C.ExternVar t name _ ->
+    getSBV t (lookupInput name (extVars inputs))
 
   ----------------------------------------------------
 
-  C.ExternArray _ t name _ _ _ tag -> 
-    getSBV t getExtArr
+  C.ExternArray _ t name _ _ _ tag ->
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extArrs inputs))
 
-    where 
-    getExtArr :: ExtInput
-    getExtArr = lookupInput (mkExtTmpTag name (tag)) (extArrs inputs)
+  ----------------------------------------------------
 
-    getSBV t1 ExtInput { extInput  = v
-                       , extType = t2 }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
+  C.ExternMatrix _ t name _ _ _ _ _ tag ->
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extMats inputs))
 
   ----------------------------------------------------
 
   C.ExternFun t name _ _ tag ->
-    getSBV t getExtFun
+    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extFuns inputs))
 
-    where
-    getExtFun :: ExtInput
-    getExtFun = lookupInput (mkExtTmpTag name (tag)) (extFuns inputs)
-
-    getSBV t1 ExtInput { extType  = t2
-                       , extInput = v }
-      = let Just p = t2 =~= t1 in
-        coerce (cong p) v
- 
   ----------------------------------------------------
 
   C.Op1 op e ->
@@ -184,7 +178,7 @@ c2sExpr_ e0 env inputs = case e0 of
   C.Op2 op e1 e2 ->
     let res1 = c2sExpr_ e1 env inputs in
     let res2 = c2sExpr_ e2 env inputs in
-    c2sOp2 op res1 res2 
+    c2sOp2 op res1 res2
 
   ----------------------------------------------------
 
@@ -194,30 +188,19 @@ c2sExpr_ e0 env inputs = case e0 of
     let res3 = c2sExpr_ e3 env inputs in
     c2sOp3 op res1 res2 res3
 
-  C.Label t s e -> case W.symWordInst t of 
+  C.Label t s e -> case W.symWordInst t of
                        W.SymWordInst -> S.label s (c2sExpr_ e env inputs)
 
---------------------------------------------------------------------------------      
-
-noFloatOpsErr :: String -> a
-noFloatOpsErr op = 
-  badUsage ("The operation you used is not supported by the SBV backend: " 
-         ++ "operator " ++ op ++ " not supported. Please change it with your math skills to something supported.")
-
---------------------------------------------------------------------------------      
+--------------------------------------------------------------------------------
 
 c2sOp1 :: C.Op1 a b -> S.SBV a -> S.SBV b
 c2sOp1 op = case op of
   Not     -> (S.bnot)
-  Abs   t -> case W.symWordInst t of 
-                       W.SymWordInst         -> abs 
-  Sign  t -> case W.symWordInst t of 
-                       W.SymWordInst         -> signum
-  BwNot t -> case W.bitsInst    t of 
-                       W.BitsInst            -> (S.complement)
+  Abs   t -> case W.symWordInst t of W.SymWordInst -> abs
+  Sign  t -> case W.symWordInst t of W.SymWordInst -> signum
+  BwNot t -> case W.bitsInst t of W.BitsInst -> (S.complement)
 
-  Cast t0 t1 -> case W.castInst t0 t1 of 
-                  W.CastInst -> W.sbvCast
+  Cast t0 t1 -> case W.castInst t0 t1 of W.CastInst -> W.sbvCast
 
   Recip _      -> noFloatOpsErr "recip"
 
@@ -269,30 +252,30 @@ c2sOp2 op = case op of
   Lt    t -> case W.ordInst      t of W.OrdInst        ->  (S..<)
   Gt    t -> case W.ordInst      t of W.OrdInst        ->  (S..>)
 
-  Div   t -> case W.divInst      t of W.BVDivisibleInst  ->  
+  Div   t -> case W.divInst      t of W.BVDivisibleInst  ->
                                                   \x y -> fst (S.sQuotRem x y)
-  Mod   t -> case W.divInst      t of W.BVDivisibleInst  ->  
+  Mod   t -> case W.divInst      t of W.BVDivisibleInst  ->
                                                   \x y -> snd (S.sQuotRem x y)
 
   BwAnd t -> case W.bitsInst     t of W.BitsInst       -> (S..&.)
   BwOr  t -> case W.bitsInst     t of W.BitsInst       -> (S..|.)
   BwXor t -> case W.bitsInst     t of W.BitsInst       -> (S.xor)
-  BwShiftL tvec tidx -> 
-    case W.integralInst tvec of 
-      W.IntegralInst -> 
+  BwShiftL tvec tidx ->
+    case W.integralInst tvec of
+      W.IntegralInst ->
         \vec idx -> case (W.integralInst tidx) of
                       W.IntegralInst -> S.sShiftLeft vec idx
                                 --case S.unliteral idx of
                                  --        Nothing -> badUsage "Using the SBV backend, shiftL only supports constant shift indicies"
                                  --        Just x  -> S.shiftL vec (fromIntegral x)
-  BwShiftR tvec tidx -> 
-    case W.integralInst tvec of 
-      W.IntegralInst -> 
+  BwShiftR tvec tidx ->
+    case W.integralInst tvec of
+      W.IntegralInst ->
         \vec idx -> case (W.integralInst tidx) of
                       W.IntegralInst -> S.sShiftRight vec idx
 
---    case W.bitsInst tvec of 
---      W.BitsInst -> 
+--    case W.bitsInst tvec of
+--      W.BitsInst ->
 --        \vec idx -> case W.symWordInst tidx of
 --                      W.SymWordInst -> case S.unliteral idx of
 --                                         Nothing -> badUsage "Using the SBV backend, shiftR only supports constant shift indicies"
@@ -309,7 +292,7 @@ c2sOp2 op = case op of
 c2sOp3 :: C.Op3 a b c d -> S.SBV a -> S.SBV b -> S.SBV c -> S.SBV d
 c2sOp3 op = case op of
   Mux t ->
-    case W.mergeableInst t of 
+    case W.mergeableInst t of
       W.MergeableInst -> \b c1 c2 -> S.ite b c1 c2
 
 

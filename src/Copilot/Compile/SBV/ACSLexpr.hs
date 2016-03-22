@@ -33,24 +33,26 @@ ptrName id = text "ptr_" <> int id
 ppExpr :: MT.MetaTable -> Expr a -> Doc
 ppExpr meta e0 = parens $ case e0 of
   Const t x                  -> text (showWithType Haskell t x)
-  Drop _ 0 id                -> 
+  Drop _ 0 id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
-          Just Stream { streamBuffer = ll } -> 
+          Just Stream { streamBuffer = ll } ->
             let streamSize = (length ll) in
-            case streamSize of 
+            case streamSize of
               1 -> strmName id <> lbrack <> (text "0") <> rbrack
               _ -> strmName id <> lbrack <> (ptrName id) <> rbrack
-  Drop _ i id                -> 
+  Drop _ i id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
-          Just Stream { streamBuffer = ll } -> 
+          Just Stream { streamBuffer = ll } ->
             let streamSize = (length ll) in
-            strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
+            strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack
   ExternVar _ name _        -> text $ mkExtTmpVar name
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
-  ExternArray _ _ name 
+  ExternArray _ _ name
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
+  ExternMatrix _ _ name
+              _ _ _ _ _ tag      -> (text $ mkExtTmpTag name tag)
   Local _ _ name e1 e2       -> text "\\let" <+> (text name) <+> equals
                                           <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2)
   Var _ name                 -> (text name)
@@ -118,7 +120,7 @@ ppOp3 op = case op of
     text ":" <+> doc3 <> text ")"
 
 --------------------------------------------------------------------------------
-  
+
 ppInfix :: String -> Doc -> Doc -> Doc
 ppInfix cs doc1 doc2 = parens $ doc1 <+> text cs <+> doc2
 

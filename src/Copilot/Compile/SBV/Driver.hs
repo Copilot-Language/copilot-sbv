@@ -81,7 +81,7 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   wr (text "")
 
   wr copilot
-  
+
   wr (text "/* Idents */\n")
   wr (text "/*@\n assigns \\nothing;\n */\nSBool ident_bool(SBool a) {return a;}")
   wr (text "/*@\n assigns \\nothing;\n */\nSWord8 ident_word8(SWord8 a) {return a;}")
@@ -126,7 +126,7 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
     , updateObservers params meta
     , updateStates streams
     , updateBuffers meta
-    , updatePtrs meta 
+    , updatePtrs meta
     ]
 
 --------------------------------------------------------------------------------
@@ -141,59 +141,68 @@ varDecls :: MetaTable -> Doc
 varDecls meta = vcat $ map varDecl (getVars meta)
 
   where
-  getVars :: MetaTable -> [Decl] 
-  getVars MetaTable { streamInfoMap    = streams 
-                    , externVarInfoMap = externs 
+  getVars :: MetaTable -> [Decl]
+  getVars MetaTable { streamInfoMap    = streams
+                    , externVarInfoMap = externs
                     , externArrInfoMap = externArrs
+                    , externMatInfoMap = externMats
                     , externFunInfoMap = externFuns }
-    = 
+    =
        map getTmpStVars strLst
     ++ map getQueueVars strLst
     ++ map getQueuePtrVars (map fst strLst)
     ++ map getExtVars (M.toList externs)
     ++ map getExtArrs (M.toList externArrs)
+    ++ map getExtMats (M.toList externMats)
     ++ map getExtFuns (M.toList externFuns)
     where
     strLst = M.toList streams
 
   getTmpStVars :: (C.Id, C.Stream) -> Decl
   getTmpStVars (id, C.Stream { C.streamExprType  = t
-                               , C.streamBuffer = que }) = 
+                               , C.streamBuffer = que }) =
     Decl (retType t) (text $ mkTmpStVar id) getFirst
-    where 
+    where
     -- ASSUME queue is nonempty!
     getFirst = text (cShow $ C.showWithType C.Haskell t (headErr que))
     headErr [] = C.impossible "headErr" "copilot-sbv"
     headErr xs = head xs
-  
+
   getQueueVars :: (C.Id, C.Stream) -> Decl
   getQueueVars (id, C.Stream { C.streamExprType = t
                              , C.streamBuffer = que }) =
-    Decl (retType t) 
+    Decl (retType t)
          (text (mkQueueVar id) <> lbrack <> int (length que) <> rbrack)
          getInits
-    where 
+    where
     getInits = lbrace <+> vals <+> rbrace
-      where 
-      vals = hcat $ punctuate (comma <> text " ") 
-                              (map (text . cShow . C.showWithType C.Haskell t) 
+      where
+      vals = hcat $ punctuate (comma <> text " ")
+                              (map (text . cShow . C.showWithType C.Haskell t)
                                    que)
 
   getQueuePtrVars :: C.Id -> Decl
-  getQueuePtrVars id = 
+  getQueuePtrVars id =
     Decl (retType queSize) (text $ mkQueuePtrVar id) (int 0)
-    where 
+    where
     queSize :: C.Type QueueSize
-    queSize = C.typeOf 
+    queSize = C.typeOf
 
   getExtVars :: (C.Name, C.ExtVar) -> Decl
-  getExtVars (var, C.ExtVar _ (C.UType { C.uTypeType = t })) = 
+  getExtVars (var, C.ExtVar _ (C.UType { C.uTypeType = t })) =
     Decl (retType t) (text $ mkExtTmpVar var) (int 0)
 
-  getExtArrs :: (Int, C.ExtArray) -> Decl 
+  getExtArrs :: (Int, C.ExtArray) -> Decl
   getExtArrs (_, C.ExtArray { C.externArrayName     = name
-                            , C.externArrayElemType = t 
+                            , C.externArrayElemType = t
                             , C.externArrayTag      = tag  })
+    =
+    Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
+
+  getExtMats :: (Int, C.ExtMatrix) -> Decl
+  getExtMats (_, C.ExtMatrix { C.externMatrixName     = name
+                             , C.externMatrixElemType = t
+                             , C.externMatrixTag      = tag  })
     =
     Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
 
@@ -231,19 +240,20 @@ declObservers prfx = vcat . map declObserver
 sampleExts :: MetaTable -> Doc
 sampleExts MetaTable { externVarInfoMap = extVMap
                      , externArrInfoMap = extAMap
-                     , externFunInfoMap = extFMap } 
+                     , externMatInfoMap = extMMap
+                     , externFunInfoMap = extFMap }
   =
   -- Arrays and functions have to come after vars.  This is because we may use
   -- the assignment of extVars in the definition of extArrs.  The Analyzer.hs
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
-  --extACSL $$ 
-  (mkFunc ("static " ++ sampleExtsF) $ vcat (extVars ++ extArrs ++  extFuns))
+  --extACSL $$
+  (mkFunc ("static " ++ sampleExtsF) $ vcat (extVars ++ extArrs ++ extMats ++  extFuns))
 
   where
   --ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
   --extACSL = vcat [text "/*@",
---			(case ll of 
+--			(case ll of
   --			[] -> text " assigns \\nothing;"
 --			_ -> vcat $ ll)
 --			,text "*/"]
@@ -251,6 +261,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 --  extADecl = map sampleAExt1 (M.toList extAMap)
 --  extFDecl = map sampleFExt1 (M.toList extFMap)
   extArrs = map sampleAExt (M.toList extAMap)
+  extMats = map sampleMExt (M.toList extMMap)
   extFuns = map sampleFExt (M.toList extFMap)
 
 --------------------------------------------------------------------------------
@@ -258,17 +269,17 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 -- Variables
 
 --sampleVExtACSL :: M.Map C.Name C.ExtVar -> [Doc]
---sampleVExtACSL extVMap = 
+--sampleVExtACSL extVMap =
 --  (map sampleVExtACSL1 ((fst . unzip . M.toList) extVMap)) ++ (map sampleVExtACSL2 ((fst . unzip . M.toList) extVMap))
 --sampleVExtACSL1 :: C.Name -> Doc
---sampleVExtACSL1 name = 
+--sampleVExtACSL1 name =
 --  text " assigns" <+> text (mkExtTmpVar name) <> semi
 --sampleVExtACSL2 :: C.Name -> Doc
---sampleVExtACSL2 name = 
+--sampleVExtACSL2 name =
 --  text " //ensures" <+> text (mkExtTmpVar name) <+> text "==" <+> text name <> semi
 
 sampleVExt :: C.Name -> Doc
-sampleVExt name = 
+sampleVExt name =
   text (mkExtTmpVar name) <+> equals <+> text name <> semi
 
 --------------------------------------------------------------------------------
@@ -278,55 +289,71 @@ sampleVExt name =
 -- arrays or functions (i.e., an external array can't use another external array
 -- to compute it's index).
 --sampleAExtACSL :: M.Map C.Tag C.ExtArray -> [Doc]
---sampleAExtACSL extAMap = 
+--sampleAExtACSL extAMap =
 --  (map sampleAExtACSL1 (M.toList extAMap)) ++ (map sampleAExtACSL2 (M.toList extAMap))
 --
 --sampleAExtACSL1 :: (Int, C.ExtArray) -> Doc
 --sampleAExtACSL1 (_, C.ExtArray { C.externArrayName = name
---                          , C.externArrayIdx = idx 
+--                          , C.externArrayIdx = idx
 --                          , C.externArrayTag = t     })
---  = 
+--  =
 --  text " assigns" <+> text (mkExtTmpTag name t) <+> semi
 
 
 --sampleAExtACSL2 :: (Int, C.ExtArray) -> Doc
 --sampleAExtACSL2 (_, C.ExtArray { C.externArrayName = name
---                          , C.externArrayIdx = idx 
+--                          , C.externArrayIdx = idx
 --                          , C.externArrayTag = t     })
---  = 
+--  =
 --  text " //ensures" <+> text (mkExtTmpTag name t) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name t)) <> semi
 
 --sampleAExt1 :: (Int, C.ExtArray) -> Doc
 --sampleAExt1 (_, C.ExtArray { C.externArrayName = name
---                          , C.externArrayIdx = idx 
---			  , C.externArrayElemType = tttt 
+--                          , C.externArrayIdx = idx
+--			  , C.externArrayElemType = tttt
 --                          , C.externArrayTag = t     })
 --  = (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name t)) <+> equals <+> arrIdx name idx
--- 
---  where 
+--
+--  where
 --  arrIdx :: C.Name -> C.Expr a -> Doc
 --  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
 
   -- Ok, because the analyzer disallows arrays or function calls in index
   -- expressions, and we assign all variables before arrays.
 --  idxFCall :: C.Expr a -> Doc
---  idxFCall e = 
+--  idxFCall e =
 --    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
 
 sampleAExt :: (Int, C.ExtArray) -> Doc
 sampleAExt (_, C.ExtArray { C.externArrayName = name
-                          , C.externArrayIdx = idx 
-			  , C.externArrayElemType = tttt 
+                          , C.externArrayIdx = idx
+			  , C.externArrayElemType = tttt
                           , C.externArrayTag = t     })
   = text (mkExtTmpTag name t) <+> equals <+> arrIdx name idx <> semi
-  where 
+  where
   arrIdx :: C.Name -> C.Expr a -> Doc
   arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
 
   -- Ok, because the analyzer disallows arrays or function calls in index
   -- expressions, and we assign all variables before arrays.
   idxFCall :: C.Expr a -> Doc
-  idxFCall e = 
+  idxFCall e =
+    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
+
+sampleMExt :: (Int, C.ExtMatrix) -> Doc
+sampleMExt (_, C.ExtMatrix { C.externMatrixName = name
+                           , C.externMatrixIdxRows = idxr
+                           , C.externMatrixIdxCols = idxc
+                           , C.externMatrixTag = tag     })
+  = text (mkExtTmpTag name tag) <+> equals <+> arrIdx name idxr <> arrIdx name idxc <> semi
+  where
+  arrIdx :: C.Name -> C.Expr a -> Doc
+  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
+
+  -- Ok, because the analyzer disallows arrays or function calls in index
+  -- expressions, and we assign all variables before arrays.
+  idxFCall :: C.Expr a -> Doc
+  idxFCall e =
     mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
 
 --------------------------------------------------------------------------------
@@ -337,46 +364,46 @@ sampleAExt (_, C.ExtArray { C.externArrayName = name
 
 --sampleFExtACSL1 :: (Int, C.ExtFun) -> Doc
 --sampleFExtACSL1 (_, C.ExtFun { C.externFunName = name
---                        , C.externFunArgs = args 
+--                        , C.externFunArgs = args
 --                        , C.externFunTag  = tag  })
---  = 
+--  =
 --  text " assigns" <+> text (mkExtTmpTag name tag) <> semi
 --sampleFExtACSL2 :: (Int, C.ExtFun) -> Doc
 --sampleFExtACSL2 (_, C.ExtFun { C.externFunName = name
---                        , C.externFunArgs = args 
+--                        , C.externFunArgs = args
 --                        , C.externFunTag  = tag  })
---  = 
+--  =
 --  text " //ensures" <+> text (mkExtTmpTag name tag) <+> text "==" <+> text ("tmp_"++(mkExtTmpTag name tag)) <> semi
 
 
 -- External functions
 --sampleFExt1 :: (Int, C.ExtFun) -> Doc
 --sampleFExt1 (_, C.ExtFun { C.externFunName = name
---                        , C.externFunArgs = args 
+--                        , C.externFunArgs = args
 --                        , C.externFunType = tttt
 --                        , C.externFunTag  = tag  })
---  = 
+--  =
 --  (retType tttt) <+> text ("tmp_"++(mkExtTmpTag name tag)) <+> equals <+> text name <> lparen
 --    <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
 --    <> rparen <> semi
 --
 --     where
---     mkArgCall :: (Int, C.UExpr) -> Doc 
---     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
+--     mkArgCall :: (Int, C.UExpr) -> Doc
+--     mkArgCall (i, C.UExpr { C.uExprExpr = e }) =
 --       mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
 
 sampleFExt :: (Int, C.ExtFun) -> Doc
 sampleFExt (_, C.ExtFun { C.externFunName = name
-                        , C.externFunArgs = args 
+                        , C.externFunArgs = args
                         , C.externFunType = tttt
                         , C.externFunTag  = tag  })
-  = 
+  =
   text (mkExtTmpTag name tag) <+> equals <+> text name <> lparen
     <> hsep (punctuate comma $ map mkArgCall (zip [(0 :: Int) ..] args))
     <> rparen <> semi
   where
-     mkArgCall :: (Int, C.UExpr) -> Doc 
-     mkArgCall (i, C.UExpr { C.uExprExpr = e }) = 
+     mkArgCall :: (Int, C.UExpr) -> Doc
+     mkArgCall (i, C.UExpr { C.uExprExpr = e }) =
        mkFuncCall (mkExtFunArgFn i name tag) (map text $ collectArgs e)
 
 --------------------------------------------------------------------------------
@@ -412,7 +439,7 @@ updateStates streams = (text "/*@\n") <> (hcat $ map updateStACSL (streams)) <+>
 --------------------------------------------------------------------------------
 
 updateObservers :: Params -> MetaTable -> Doc
-updateObservers params MetaTable { observerInfoMap = observers } 
+updateObservers params MetaTable { observerInfoMap = observers }
   = let ll = M.toList observers
   in (case ll of
   [] -> text "/*@\n assigns \\nothing;\n */"
@@ -432,7 +459,7 @@ updateObservers params MetaTable { observerInfoMap = observers }
 --------------------------------------------------------------------------------
 
 fireTriggers :: MetaTable -> Doc
-fireTriggers MetaTable { triggerInfoMap = triggers } 
+fireTriggers MetaTable { triggerInfoMap = triggers }
   = -- text "/*@\n assigns \\nothing; \n*/" $$
   (mkFunc ("static " ++ triggersF) $ vcat $ map fireTrig (M.toList triggers))
 
@@ -440,14 +467,14 @@ fireTriggers MetaTable { triggerInfoMap = triggers }
   -- if (guard) trigger(args);
   fireTrig :: (C.Name, TriggerInfo) -> Doc
   fireTrig (name, TriggerInfo { guardArgs      = gArgs
-                              , triggerArgArgs = argArgs }) 
-    = 
+                              , triggerArgArgs = argArgs })
+    =
     text "if" <+> lparen <> guardF <> rparen $+$ nest 2 f
 
     where
-    f = text name <> lparen 
-          <> vcat (punctuate comma $ map mkArg (mkArgIdx argArgs)) 
-          <> rparen <> semi 
+    f = text name <> lparen
+          <> vcat (punctuate comma $ map mkArg (mkArgIdx argArgs))
+          <> rparen <> semi
 
     guardF :: Doc
     guardF = mkFuncCall (mkTriggerGuardFn name) (map text gArgs)
@@ -460,14 +487,14 @@ fireTriggers MetaTable { triggerInfoMap = triggers }
 writeACSLqueues :: MetaTable -> Doc
 writeACSLqueues MetaTable { streamInfoMap = strMap } =
   let ll = M.toList strMap
-  in 
+  in
 
   vcat $ (text "/*ACSL following*/\n"):(case ll of
   [] -> [text ""]
   _ -> (text "/*@" :(map varAndUpdate (ll) ++ [(text "*/")]))
-  ) 
+  )
 
-  where 
+  where
   varAndUpdate :: (C.Id, C.Stream) -> Doc
   varAndUpdate (id, C.Stream { C.streamBuffer = que }) =
     updateFunc (mkQueueVar id) (fromIntegral $ length que) (mkQueuePtrVar id)
@@ -482,7 +509,7 @@ writeACSLqueues MetaTable { streamInfoMap = strMap } =
 --------------------------------------------------------------------------------
 
 updateBuffers :: MetaTable -> Doc
-updateBuffers MetaTable { streamInfoMap = strMap } 
+updateBuffers MetaTable { streamInfoMap = strMap }
   = let ll = M.toList strMap
   in (case ll of
   [] -> text "/*@\n assigns \\nothing;\n */"
@@ -522,7 +549,7 @@ updatePtrs MetaTable { streamInfoMap = strMap } =
   )$$
   (mkFunc ("static " ++ updatePtrsF) $ vcat $ map varAndUpdate (ll))
 
-  where 
+  where
 
   varAndUpdateACSL :: (C.Id, C.Stream) -> Doc
   varAndUpdateACSL (id, C.Stream { C.streamBuffer = que }) =
@@ -531,8 +558,8 @@ updatePtrs MetaTable { streamInfoMap = strMap } =
   -- idx = (idx + 1) % queueSize;
   updateFuncACSL :: QueueSize -> String -> Doc
   updateFuncACSL sz ptr =
-    text " assigns" <+> text ptr <> semi <> (text "\n ensures" <+> text ptr <+> text "==" 
-      <+> lparen <> text "\\old (" <> text ptr <+> text ") +" <+> int 1 <> rparen 
+    text " assigns" <+> text ptr <> semi <> (text "\n ensures" <+> text ptr <+> text "=="
+      <+> lparen <> text "\\old (" <> text ptr <+> text ") +" <+> int 1 <> rparen
       <+> text "%" <+> int (fromIntegral sz) <> semi <> text "\n")
 
 
@@ -543,8 +570,8 @@ updatePtrs MetaTable { streamInfoMap = strMap } =
   -- idx = (idx + 1) % queueSize;
   updateFunc :: QueueSize -> String -> Doc
   updateFunc sz ptr =
-    text ptr <+> equals 
-      <+> lparen <> text ptr <+> text "+" <+> int 1 <> rparen 
+    text ptr <+> equals
+      <+> lparen <> text ptr <+> text "+" <+> int 1 <> rparen
       <+> text "%" <+> int (fromIntegral sz) <> semi
 
 --------------------------------------------------------------------------------
