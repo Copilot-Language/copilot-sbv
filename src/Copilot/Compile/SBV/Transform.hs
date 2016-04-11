@@ -160,19 +160,19 @@ transformSExpr (name, UExpr { uExprExpr = e, uExprType = t }) =
 transformExpr :: Expr a -> Expr a
 transformExpr e0 = case e0 of
   Const t x                       -> Const t x
+  Vector t x                      -> Vector t x
+  Matrix t x                      -> Matrix t x
   Drop t k id                     -> Drop t k id
   Local t1 t2 name e1 e2          -> Local t1 t2 name (transformExpr e1) (transformExpr e2)
   Var t name                      -> Var t name
   ExternVar t name e              -> ExternVar t name e
   ExternFun t name args contxt yy -> ExternFun t name (map transformUExpr args) contxt yy
-  ExternArray t1 t2 name size idx context yy
-                                  -> ExternArray t1 t2 name size (transformExpr idx) context yy
-  ExternMatrix t1 t2 name rows cols idxr idxc context yy
-                                  -> ExternMatrix t1 t2 name rows cols (transformExpr idxr) (transformExpr idxc) context yy
+  ExternArray t1 t2 name size idx ctx tag -> ExternArray t1 t2 name size (transformExpr idx) ctx tag
+  ExternVector t name size ctx tag -> ExternVector t name size ctx tag
+  ExternMatrix t name rows cols ctx tag -> ExternMatrix t name rows cols ctx tag
   Op1 op e                        -> transformOp1 op e
   Op2 op e1 e2                    -> transformOp2 op e1 e2
   Op3 op e1 e2 e3                 -> transformOp3 op e1 e2 e3
-
   Label t s e                     -> Label t s $ transformExpr e
 
 

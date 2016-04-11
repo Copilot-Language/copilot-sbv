@@ -42,6 +42,7 @@ type ExtQue = (C.Id, QueInput)
 data Inputs = Inputs
   { extVars  :: [Ext] -- external variables
   , extArrs  :: [Ext] -- external arrays
+  , extVecs  :: [Ext] -- external vectors
   , extMats  :: [Ext] -- external matrices
   , extFuns  :: [Ext] -- external functions
   , extQues  :: [ExtQue] }
@@ -111,6 +112,18 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
+  --C.Vector t x ->
+  --  case W.symWordInst t of W.SymWordInst -> S.literal x
+  -- map in a flat array
+
+  ----------------------------------------------------
+
+  --C.Matrix t x ->
+  --  case W.symWordInst t of W.SymWordInst -> S.literal x
+  -- SBV does not support not flat array at the moment
+
+  ----------------------------------------------------
+
   C.Drop t i id -> drop1 t que
     where
     que :: QueInput
@@ -159,8 +172,13 @@ c2sExpr_ e0 env inputs = case e0 of
 
   ----------------------------------------------------
 
-  C.ExternMatrix _ t name _ _ _ _ _ tag ->
-    getSBV t (lookupInput (mkExtTmpTag name (tag)) (extMats inputs))
+  --C.ExternVector t name _ _ tag ->
+  --  getSBV t (lookupInput (mkExtTmpTag name (tag)) (extVecs inputs))
+
+  ----------------------------------------------------
+
+  --C.ExternMatrix t name _ _ _ tag ->
+  --  getSBV t (lookupInput (mkExtTmpTag name (tag)) (extMats inputs))
 
   ----------------------------------------------------
 

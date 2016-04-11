@@ -35,6 +35,7 @@ import Prelude hiding (id)
 type StreamInfoMap = Map C.Id C.Stream
 type ExternVarInfoMap = Map C.Name C.ExtVar
 type ExternArrInfoMap = Map C.Tag C.ExtArray
+type ExternVecInfoMap = Map C.Tag C.ExtVector
 type ExternMatInfoMap = Map C.Tag C.ExtMatrix
 type ExternFunInfoMap = Map C.Tag C.ExtFun
 
@@ -59,6 +60,7 @@ data MetaTable = MetaTable
   { streamInfoMap     :: StreamInfoMap
   , externVarInfoMap  :: ExternVarInfoMap
   , externArrInfoMap  :: ExternArrInfoMap
+  , externVecInfoMap  :: ExternVecInfoMap
   , externMatInfoMap  :: ExternMatInfoMap
   , externFunInfoMap  :: ExternFunInfoMap
   , triggerInfoMap    :: TriggerInfoMap
@@ -71,6 +73,7 @@ allocMetaTable spec =
   MetaTable { streamInfoMap    = streamInfoMap_
             , externVarInfoMap = externVarInfoMap_
             , externArrInfoMap = externArrInfoMap_
+            , externVecInfoMap = externVecInfoMap_
             , externMatInfoMap = externMatInfoMap_
             , externFunInfoMap = externFunInfoMap_
             , triggerInfoMap   = triggerInfoMap_
@@ -80,6 +83,7 @@ allocMetaTable spec =
   streamInfoMap_    = M.fromList $ map allocStream     (C.specStreams spec)
   externVarInfoMap_ = M.fromList $ map allocExternVars (C.externVars spec)
   externArrInfoMap_ = M.fromList $ map allocExternArrs (C.externArrays spec)
+  externVecInfoMap_ = M.fromList $ map allocExternVecs (C.externVectors spec)
   externMatInfoMap_ = M.fromList $ map allocExternMats (C.externMatrices spec)
   externFunInfoMap_ = M.fromList $ map allocExternFuns (C.externFuns spec)
   triggerInfoMap_   = M.fromList $ map allocTrigger    (C.specTriggers spec)
@@ -99,6 +103,11 @@ allocExternVars var = (C.externVarName var, var)
 
 allocExternArrs :: C.ExtArray -> (C.Tag, C.ExtArray)
 allocExternArrs arr = (tagExtract $ C.externArrayTag arr, arr)
+
+--------------------------------------------------------------------------------
+
+allocExternVecs :: C.ExtVector -> (C.Tag, C.ExtVector)
+allocExternVecs vec = (tagExtract $ C.externVectorTag vec, vec)
 
 --------------------------------------------------------------------------------
 
@@ -139,6 +148,7 @@ allocObserver C.Observer { C.observerName = name
 data Arg = Extern       C.Name
          | ExternFun    C.Name C.Tag
          | ExternArr    C.Name C.Tag
+         | ExternVec    C.Name C.Tag
          | ExternMat    C.Name C.Tag
          | Queue        C.Id
   deriving Eq
@@ -147,6 +157,7 @@ data Arg = Extern       C.Name
 argToCall :: Arg -> [String]
 argToCall (Extern name)           = [mkExtTmpVar name]
 argToCall (ExternArr name tag)    = [mkExtTmpTag name (Just tag)]
+argToCall (ExternVec name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternMat name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (ExternFun name tag)    = [mkExtTmpTag name (Just tag)]
 argToCall (Queue id)              = [ mkQueueVar id
@@ -177,6 +188,10 @@ c2Args_ :: C.Expr a -> [Arg]
 c2Args_ e0 = case e0 of
   C.Const _ _            -> []
 
+  C.Vector _ _            -> []
+
+  C.Matrix _ _            -> []
+
   C.Drop _ _ id          -> [ Queue id ]
 
   C.Local _ _ _ e1 e2    -> c2Args_ e1 ++ c2Args_ e2
@@ -193,7 +208,9 @@ c2Args_ e0 = case e0 of
 
   C.ExternArray _ _ name _ _ _ tag  ->[ExternArr name (tagExtract tag)]
 
-  C.ExternMatrix _ _ name _ _ _ _ _ tag  ->[ExternMat name (tagExtract tag)]
+  C.ExternVector _ name _ _ tag  ->[ExternVec name (tagExtract tag)]
+
+  C.ExternMatrix _ name _ _ _ tag  ->[ExternMat name (tagExtract tag)]
 
   C.Op1 _ e        -> c2Args_ e
 

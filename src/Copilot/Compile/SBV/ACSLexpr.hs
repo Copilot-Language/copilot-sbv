@@ -11,6 +11,7 @@ module Copilot.Compile.SBV.ACSLexpr
   ) where
 
 import Copilot.Core
+import Copilot.Core.PrettyPrint (prPrintMatrix, prPrintVector)
 import Copilot.Core.Type.Show (showWithType, ShowType(..), showType)
 import Prelude hiding (id)
 import Text.PrettyPrint.HughesPJ
@@ -32,7 +33,9 @@ ptrName id = text "ptr_" <> int id
 
 ppExpr :: MT.MetaTable -> Expr a -> Doc
 ppExpr meta e0 = parens $ case e0 of
-  Const t x                  -> text (showWithType Haskell t x)
+  Const t x  -> text (showWithType Haskell t x)
+  Vector t x -> prPrintVector t x
+  Matrix t x -> prPrintMatrix t x
   Drop _ 0 id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
@@ -51,8 +54,8 @@ ppExpr meta e0 = parens $ case e0 of
   ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
   ExternArray _ _ name
               _ _ _ tag      -> (text $ mkExtTmpTag name tag)
-  ExternMatrix _ _ name
-              _ _ _ _ _ tag      -> (text $ mkExtTmpTag name tag)
+  ExternVector _ name _ _ tag      -> (text $ mkExtTmpTag name tag)            
+  ExternMatrix _ name _ _ _ tag      -> (text $ mkExtTmpTag name tag)
   Local _ _ name e1 e2       -> text "\\let" <+> (text name) <+> equals
                                           <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2)
   Var _ name                 -> (text name)

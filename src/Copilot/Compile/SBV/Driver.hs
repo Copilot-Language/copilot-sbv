@@ -145,6 +145,7 @@ varDecls meta = vcat $ map varDecl (getVars meta)
   getVars MetaTable { streamInfoMap    = streams
                     , externVarInfoMap = externs
                     , externArrInfoMap = externArrs
+                    , externVecInfoMap = externVecs
                     , externMatInfoMap = externMats
                     , externFunInfoMap = externFuns }
     =
@@ -153,6 +154,7 @@ varDecls meta = vcat $ map varDecl (getVars meta)
     ++ map getQueuePtrVars (map fst strLst)
     ++ map getExtVars (M.toList externs)
     ++ map getExtArrs (M.toList externArrs)
+    ++ map getExtVecs (M.toList externVecs)
     ++ map getExtMats (M.toList externMats)
     ++ map getExtFuns (M.toList externFuns)
     where
@@ -199,6 +201,13 @@ varDecls meta = vcat $ map varDecl (getVars meta)
     =
     Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
 
+  getExtVecs :: (Int, C.ExtVector) -> Decl
+  getExtVecs (_, C.ExtVector { C.externVectorName     = name
+                             , C.externVectorElemType = t
+                             , C.externVectorTag      = tag  })
+    =
+    Decl (retType t) (text $ mkExtTmpTag name tag) (int 0)
+
   getExtMats :: (Int, C.ExtMatrix) -> Decl
   getExtMats (_, C.ExtMatrix { C.externMatrixName     = name
                              , C.externMatrixElemType = t
@@ -240,6 +249,7 @@ declObservers prfx = vcat . map declObserver
 sampleExts :: MetaTable -> Doc
 sampleExts MetaTable { externVarInfoMap = extVMap
                      , externArrInfoMap = extAMap
+                     , externVecInfoMap = extVeMap
                      , externMatInfoMap = extMMap
                      , externFunInfoMap = extFMap }
   =
@@ -248,7 +258,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
   -- copilot-core prevents arrays or functions from being used in arrays or
   -- functions.
   --extACSL $$
-  (mkFunc ("static " ++ sampleExtsF) $ vcat (extVars ++ extArrs ++ extMats ++  extFuns))
+  (mkFunc ("static " ++ sampleExtsF) $ vcat (extVars ++ extArrs ++ extVecs ++ extMats ++  extFuns))
 
   where
   --ll = sampleVExtACSL extVMap ++ sampleAExtACSL extAMap ++ sampleFExtACSL extFMap
@@ -261,6 +271,7 @@ sampleExts MetaTable { externVarInfoMap = extVMap
 --  extADecl = map sampleAExt1 (M.toList extAMap)
 --  extFDecl = map sampleFExt1 (M.toList extFMap)
   extArrs = map sampleAExt (M.toList extAMap)
+  extVecs = map sampleVeExt (M.toList extVeMap)
   extMats = map sampleMExt (M.toList extMMap)
   extFuns = map sampleFExt (M.toList extFMap)
 
@@ -340,21 +351,27 @@ sampleAExt (_, C.ExtArray { C.externArrayName = name
   idxFCall e =
     mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
 
+
+
+sampleVeExt :: (Int, C.ExtVector) -> Doc
+sampleVeExt (_, C.ExtVector { C.externVectorName = name
+                           , C.externVectorTag = tag     })
+    = error "sampleMExt: Not implemented yet"
+
 sampleMExt :: (Int, C.ExtMatrix) -> Doc
 sampleMExt (_, C.ExtMatrix { C.externMatrixName = name
-                           , C.externMatrixIdxRows = idxr
-                           , C.externMatrixIdxCols = idxc
                            , C.externMatrixTag = tag     })
-  = text (mkExtTmpTag name tag) <+> equals <+> arrIdx name idxr <> arrIdx name idxc <> semi
-  where
-  arrIdx :: C.Name -> C.Expr a -> Doc
-  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
+    = error "sampleMExt: Not implemented yet"
+--  = text (mkExtTmpTag name tag) <+> equals <+> arrIdx name idxr <> arrIdx name idxc <> semi
+--  where
+--  arrIdx :: C.Name -> C.Expr a -> Doc
+--  arrIdx name' e = text name' <> lbrack <> idxFCall e <> rbrack <> semi
 
-  -- Ok, because the analyzer disallows arrays or function calls in index
-  -- expressions, and we assign all variables before arrays.
-  idxFCall :: C.Expr a -> Doc
-  idxFCall e =
-    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
+--  -- Ok, because the analyzer disallows arrays or function calls in index
+--  -- expressions, and we assign all variables before arrays.
+--  idxFCall :: C.Expr a -> Doc
+--  idxFCall e =
+--    mkFuncCall (mkExtArrFn name) (map text $ collectArgs e)
 
 --------------------------------------------------------------------------------
 

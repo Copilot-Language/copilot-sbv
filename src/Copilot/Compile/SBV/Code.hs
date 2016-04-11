@@ -10,7 +10,7 @@ module Copilot.Compile.SBV.Code
   , updateObservers
   , fireTriggers
   , getExtArrs
-  , getExtMats
+--  , getExtMats
   , getExtFuns
   ) where
 
@@ -163,32 +163,30 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
 -- Generate an SBV function that calculates the Copilot expression to get the
 -- next index to sample an external matrix.
 
-getExtMats :: MetaTable -> [SBVFunc]
-getExtMats meta@(MetaTable { externMatInfoMap = mats })
-  = map mkIdx (M.toList mats)
+--getExtMats :: MetaTable -> [SBVFunc]
+--getExtMats meta@(MetaTable { externMatInfoMap = mats })
+--  = map mkIdx (M.toList mats)
 
-  where
-  mkIdx :: (Int, C.ExtMatrix) -> SBVFunc
-  mkIdx (_, C.ExtMatrix { C.externMatrixName    = name
-                        , C.externMatrixIdxRows = idxr
-                        , C.externMatrixIdxCols = idxc
-                        , C.externMatrixIdxType = t    })
-    =
-    mkSBVFunc (mkExtArrFn name) mkSBVExpr
-    where
-    mkSBVExpr :: S.SBVCodeGen ()
-    mkSBVExpr = do
-      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n"
-        ++ (PD.prettyPrintExprDot False idxr)
-        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
-        ++ (PJ.render $ ppExpr meta idxr) ++ ";\n*/"
-        ++ (PD.prettyPrintExprDot False idxc)
-        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
-        ++ (PJ.render $ ppExpr meta idxc) ++ ";\n*/" )]
-      inputs <- mkInputs meta ((c2Args idxr)++(c2Args idxc))
-      W.SymWordInst <- return (W.symWordInst t)
-      W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
-      S.cgReturnArr [(c2sExpr inputs idxr), (c2sExpr inputs idxc)]
+--  where
+--  mkIdx :: (Int, C.ExtMatrix) -> SBVFunc
+--  mkIdx (_, C.ExtMatrix { C.externMatrixName    = name
+--                        , C.externMatrixIdxType = t    })
+--    =
+--    mkSBVFunc (mkExtArrFn name) mkSBVExpr
+--    where
+--    mkSBVExpr :: S.SBVCodeGen ()
+--    mkSBVExpr = do
+--      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n"
+--        ++ (PD.prettyPrintExprDot False idxr)
+--        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
+--        ++ (PJ.render $ ppExpr meta idxr) ++ ";\n*/"
+--        ++ (PD.prettyPrintExprDot False idxc)
+--        ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == "
+--        ++ (PJ.render $ ppExpr meta idxc) ++ ";\n*/" )]
+--      inputs <- mkInputs meta ((c2Args idxr)++(c2Args idxc))
+--      W.SymWordInst <- return (W.symWordInst t)
+--      W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
+--      S.cgReturnArr [(c2sExpr inputs idxr), (c2sExpr inputs idxc)]
 
 --------------------------------------------------------------------------------
 
@@ -220,7 +218,7 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 
 mkInputs :: MetaTable -> [Arg] -> S.SBVCodeGen Inputs
 mkInputs meta args =
-  foldM argToInput (Inputs [] [] [] [] []) args
+  foldM argToInput (Inputs [] [] [] [] [] []) args
 
   where
   argToInput :: Inputs -> Arg -> S.SBVCodeGen Inputs

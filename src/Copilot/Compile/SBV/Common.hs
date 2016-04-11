@@ -48,6 +48,9 @@ mkExtTmpTag name tag = "ext_" ++ name ++ "_" ++ show (tagExtract tag)
 mkExtArrFn :: String -> String
 mkExtArrFn = (++) "ext_arr_"
 
+mkExtVecFn :: String -> String
+mkExtVecFn = (++) "ext_vec_"
+
 mkExtMatFn :: String -> String
 mkExtMatFn = (++) "ext_mat_"
 
