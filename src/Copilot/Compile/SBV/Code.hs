@@ -55,7 +55,7 @@ updateStates meta (C.Spec streams _ _ _) =
                              , C.streamExprType = t1
                                                       }
     = mkSBVFunc (mkUpdateStFn id) $ do
-        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta $ simpl e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
+        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         let Just strmInfo = M.lookup id (streamInfoMap meta)
@@ -85,7 +85,7 @@ updateObservers meta (C.Spec _ observers _ _) =
     where
     mkSBVExp =
       do
-        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta $ simpl e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
+        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         W.SymWordInst <- return (W.symWordInst t)
@@ -108,7 +108,7 @@ fireTriggers meta (C.Spec _ _ triggers _) =
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
     mkSBVExp = do
-      S.cgAddDecl [("/*test 006*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta $ simpl guard) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 006*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args guard)
       let e = c2sExpr inputs guard
       S.cgReturn e
@@ -122,7 +122,7 @@ mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
   mkSBVFunc fnCallName mkExpr
   where
   mkExpr = do
-    S.cgAddDecl [("/*test 003*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta $ simpl e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
+    S.cgAddDecl [("/*test 003*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
     inputs <- mkInputs meta (c2Args e)
     let e' = c2sExpr inputs e
     W.SymWordInst <- return (W.symWordInst t)
@@ -147,7 +147,7 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
-      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta $ simpl idx) ++ ") <= " ++ show epsilon ++ ";\n*/")]
+      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta idx) ++ ") <= " ++ show epsilon ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args idx)
       W.SymWordInst <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
@@ -276,79 +276,4 @@ mkExtInput_ t name = do
   W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
   ext <- S.cgInput name
   return ext
-
------------------------------------------
-
-simpl :: Expr a -> Expr a
-simpl = \ case
-  Op1 op e            -> simplOp1 (simpl e) op
-  Op2 op e1 e2        -> simplOp2 (simpl e1) (simpl e2) op
-  Op3 op e1 e2 e3     -> simplOp3 (simpl e1) (simpl e2) (simpl e3) op
-  Local t1 t2 n e1 e2 -> Local t1 t2 n (simpl e1) (simpl e2)
-  Label t s e         -> Label t s (simpl e)
-
-  c                   -> c
-
-simplOp1 :: Expr a -> Op1 a b -> Expr b
-simplOp1 e@(Const Bool x) = \ case
-  Not      -> Const Bool $ not x
-  op       -> Op1 op e
-simplOp1 e@(Const Double x) = \ case
-  Abs _    -> Const Double $ abs x
-  --Sign _   -> sign x
-  --Recip _  ->
-  --Exp _    ->
-  --Sqrt _   ->
-  --Log _    ->
-  Sin _    -> Const Double $ sin x
-  Tan _    -> Const Double $ tan x
-  Cos _    -> Const Double $ cos x
-  Asin _   -> Const Double $ asin x
-  Atan _   -> Const Double $ atan x
-  Acos _   -> Const Double $ acos x
-  Sinh _   -> Const Double $ sinh x
-  Tanh _   -> Const Double $ tanh x
-  Cosh _   -> Const Double $ cosh x
-  Asinh _  -> Const Double $ asinh x
-  Atanh _  -> Const Double $ atanh x
-  Acosh _  -> Const Double $ acosh x
-  --BwNot _  ->
-  --Cast _ _ ->
-  op           -> Op1 op e
-simplOp1 e = \ op -> Op1 op e
-
-simplOp2 :: Expr a -> Expr b -> Op2 a b c -> Expr c
-simplOp2 e1@(Const Bool x1) e2@(Const Bool x2) = \ case
-  And          -> Const Bool $ x1 && x2
-  Or           -> Const Bool $ x1 || x2
-  Eq       _   -> Const Bool $ x1 == x2
-  Ne       _   -> Const Bool $ x1 /= x2
-  op           -> Op2 op e1 e2
-simplOp2 e1@(Const Double x1) e2@(Const Double x2) = \ case
-  Add      _   -> Const Double $ x1 + x2
-  Sub      _   -> Const Double $ x1 - x2
-  Mul      _   -> Const Double $ x1 * x2
-  Div      _   -> Const Double $ x1 / x2
-  Mod      _   -> Const Double $ x1 `mod` x2
-  --Fdiv     _   ->
-  Pow      _   -> Const Double $ x1 ** x2
-  -- Logb     _   ->
-  Eq       _   -> Const Bool $ x1 == x2
-  Ne       _   -> Const Bool $ x1 /= x2
-  Le       _   -> Const Bool $ x1 <= x2
-  Ge       _   -> Const Bool $ x1 >= x2
-  Lt       _   -> Const Bool $ x1 < x2
-  Gt       _   -> Const Bool $ x1 > x2
-  --BwAnd    _   ->
-  --BwOr     _   ->
-  --BwXor    _   ->
-  --BwShiftL _ _ ->
-  --BwShiftR _ _ ->
-  op           -> Op2 op e1 e2
-simplOp2 e1 e2 = \ op -> Op2 op e1 e2
-
-simplOp3 :: Expr a -> Expr b -> Expr c -> Op3 a b c d -> Expr d
--- simplOp3 (Const _ x1) (Const _ x2) (Const _ x3) = \ case
---   Mux _    -> if x1 then x2 else x3
-simplOp3 e1 e2 e3 = \ op -> Op3 op e1 e2 e3
 

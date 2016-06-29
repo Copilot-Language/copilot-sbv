@@ -31,7 +31,7 @@ ptrName id = text "ptr_" <> int id
 --------------------------------------------------------------------------------
 
 ppExpr :: MT.MetaTable -> Expr a -> Doc
-ppExpr meta e0 = parens $ case e0 of
+ppExpr meta e0 = case e0 of
   Const t x                  -> text (showWithType Haskell t x)
   Drop _ 0 id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
@@ -51,12 +51,12 @@ ppExpr meta e0 = parens $ case e0 of
   ExternFun _ name _ _ tag  -> text $ mkExtTmpTag name tag
   ExternArray _ _ name
               _ _ _ tag      -> text $ mkExtTmpTag name tag
-  Local _ _ name e1 e2       -> text "\\let" <+> text name <+> equals
+  Local _ _ name e1 e2       -> parens $ text "\\let" <+> text name <+> equals
                                           <+> ppExpr meta e1 <+> text ";" <+> ppExpr meta e2
   Var _ name                 -> text name
-  Op1 op e                   -> ppOp1 op (ppExpr meta e)
-  Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
-  Op3 op e1 e2 e3            -> ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
+  Op1 op e                   -> parens $ ppOp1 op (ppExpr meta e)
+  Op2 op e1 e2               -> parens $ ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
+  Op3 op e1 e2 e3            -> parens $ ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
   Label t s e                -> ppExpr meta e
 
 ppOp1 :: Op1 a b -> Doc -> Doc
@@ -118,7 +118,6 @@ ppOp3 op = case op of
 
 ppInfix :: String -> Doc -> Doc -> Doc
 ppInfix cs doc1 doc2 = parens $ doc1 <+> text cs <+> doc2
-
 
 ppPrefix2 :: String -> Doc -> Doc -> Doc
 ppPrefix2 cs doc1 doc2 = parens $ text cs <+> doc1 <> text "," <+> doc2
