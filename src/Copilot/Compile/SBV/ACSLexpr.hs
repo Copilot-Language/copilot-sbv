@@ -31,41 +31,38 @@ ptrName id = text "ptr_" <> int id
 --------------------------------------------------------------------------------
 
 ppExpr :: MT.MetaTable -> Expr a -> Doc
-ppExpr meta e0 = parens $ case e0 of
+ppExpr meta e0 = case e0 of
   Const t x                  -> text (showWithType Haskell t x)
-  Drop _ 0 id                -> 
+  Drop _ 0 id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
-          Just Stream { streamBuffer = ll } -> 
-            let streamSize = (length ll) in
-            case streamSize of 
-              1 -> strmName id <> lbrack <> (text "0") <> rbrack
-              _ -> strmName id <> lbrack <> (ptrName id) <> rbrack
-  Drop _ i id                -> 
+          Just Stream { streamBuffer = ll } ->
+            let streamSize = length ll in
+            case streamSize of
+              1 -> strmName id <> lbrack <> text "0" <> rbrack
+              _ -> strmName id <> lbrack <> ptrName id <> rbrack
+  Drop _ i id                ->
         let aa = M.lookup id (MT.streamInfoMap meta)
         in case aa of
-          Just Stream { streamBuffer = ll } -> 
-            let streamSize = (length ll) in
-            strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack 
+          Just Stream { streamBuffer = ll } ->
+            let streamSize = length ll in
+            strmName id <> lbrack <> lparen <> ptrName id <> text (" + " ++ show i) <> rparen <> text " % " <> int streamSize <> rbrack
   ExternVar _ name _        -> text $ mkExtTmpVar name
-  ExternFun _ name _ _ tag  -> (text $ mkExtTmpTag name tag)
-  ExternArray _ _ name 
-              _ _ _ tag      -> (text $ mkExtTmpTag name tag)
-  Local _ _ name e1 e2       -> text "\\let" <+> (text name) <+> equals
-                                          <+> (ppExpr meta e1) <+> text ";" <+> (ppExpr meta e2)
-  Var _ name                 -> (text name)
-  Op1 op e                   -> ppOp1 op (ppExpr meta e)
-  Op2 op e1 e2               -> ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
-  Op3 op e1 e2 e3            -> ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
-  Label t s e                -> (ppExpr meta e)
-
-ppUExpr :: MT.MetaTable -> UExpr -> Doc
-ppUExpr meta UExpr { uExprExpr = e0 } = ppExpr meta e0
+  ExternFun _ name _ _ tag  -> text $ mkExtTmpTag name tag
+  ExternArray _ _ name
+              _ _ _ tag      -> text $ mkExtTmpTag name tag
+  Local _ _ name e1 e2       -> parens $ text "\\let" <+> text name <+> equals
+                                          <+> ppExpr meta e1 <+> text ";" <+> ppExpr meta e2
+  Var _ name                 -> text name
+  Op1 op e                   -> parens $ ppOp1 op (ppExpr meta e)
+  Op2 op e1 e2               -> parens $ ppOp2 op (ppExpr meta e1) (ppExpr meta e2)
+  Op3 op e1 e2 e3            -> parens $ ppOp3 op (ppExpr meta e1) (ppExpr meta e2) (ppExpr meta e3)
+  Label t s e                -> ppExpr meta e
 
 ppOp1 :: Op1 a b -> Doc -> Doc
 ppOp1 op = case op of
   Not      -> ppPrefix "!"
-  Abs _    -> \x -> ((parens $ x <> (text " > 0")) <> text "? " <> x <> text " : -" <> x )
+  Abs _    -> ppPrefix "\\abs"
   Sign _   -> \x -> ((parens $ x <> (text " > 0")) <> text "? 1 : ") <> (parens $ x <> (text " < 0 ? -1 : ") <> x)
   Recip _  -> ppPrefix "\\recip"
   Exp _    -> ppPrefix "\\exp"
@@ -118,10 +115,9 @@ ppOp3 op = case op of
     text ":" <+> doc3 <> text ")"
 
 --------------------------------------------------------------------------------
-  
+
 ppInfix :: String -> Doc -> Doc -> Doc
 ppInfix cs doc1 doc2 = parens $ doc1 <+> text cs <+> doc2
-
 
 ppPrefix2 :: String -> Doc -> Doc -> Doc
 ppPrefix2 cs doc1 doc2 = parens $ text cs <+> doc1 <> text "," <+> doc2

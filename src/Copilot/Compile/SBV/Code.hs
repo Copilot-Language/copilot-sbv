@@ -4,6 +4,7 @@
 
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Copilot.Compile.SBV.Code
   ( updateStates
@@ -14,7 +15,7 @@ module Copilot.Compile.SBV.Code
   ) where
 
 import Copilot.Compile.SBV.Copilot2SBV
-import Copilot.Compile.SBV.MetaTable
+import Copilot.Compile.SBV.MetaTable as T
 import qualified Copilot.Compile.SBV.Witness as W
 import Copilot.Compile.SBV.Common
 import Copilot.Compile.SBV.ACSLexpr
@@ -22,7 +23,7 @@ import Copilot.Compile.SBV.ACSLexpr
 import qualified Copilot.Core.PrettyDot as PD
 import qualified Text.PrettyPrint.HughesPJ as PJ
 
-import qualified Copilot.Core as C
+import Copilot.Core as C
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 
 import qualified Data.SBV as S
@@ -40,6 +41,9 @@ mkSBVFunc str codeGen = (str, codeGen)
 
 --------------------------------------------------------------------------------
 
+epsilon :: Double
+epsilon = 0.1
+
 updateStates :: MetaTable -> C.Spec -> [SBVFunc]
 updateStates meta (C.Spec streams _ _ _) =
   map updateStreamState streams
@@ -47,15 +51,14 @@ updateStates meta (C.Spec streams _ _ _) =
   where
   updateStreamState :: C.Stream -> SBVFunc
   updateStreamState C.Stream { C.streamId       = id
-                             , C.streamBuffer   = buffer
                              , C.streamExpr     = e
                              , C.streamExprType = t1
-                                                      } 
+                                                      }
     = mkSBVFunc (mkUpdateStFn id) $ do
-        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 001*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
-        let Just strmInfo = M.lookup id (streamInfoMap meta) 
+        let Just strmInfo = M.lookup id (streamInfoMap meta)
         updateStreamState1 t1 e' strmInfo
 
   updateStreamState1 :: C.Type a -> S.SBV a -> C.Stream -> S.SBVCodeGen ()
@@ -82,7 +85,7 @@ updateObservers meta (C.Spec _ observers _ _) =
     where
     mkSBVExp =
       do
-        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+        S.cgAddDecl [("/*test 005*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
         inputs <- mkInputs meta (c2Args e)
         let e' = c2sExpr inputs e
         W.SymWordInst <- return (W.symWordInst t)
@@ -105,7 +108,7 @@ fireTriggers meta (C.Spec _ _ triggers _) =
     where
     go (i,e) = mkArgCall meta (mkTriggerArgFn i name) e
     mkSBVExp = do
-      S.cgAddDecl [("/*test 006*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False guard) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 006*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta guard) ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args guard)
       let e = c2sExpr inputs guard
       S.cgReturn e
@@ -114,12 +117,12 @@ fireTriggers meta (C.Spec _ _ triggers _) =
 
 mkArgCall :: MetaTable -> String -> C.UExpr -> SBVFunc
 mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
-                            , C.uExprType = t } 
+                            , C.uExprType = t }
   =
   mkSBVFunc fnCallName mkExpr
   where
   mkExpr = do
-    S.cgAddDecl [("/*test 003*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False e) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta e) ++ ";\n*/")]
+    S.cgAddDecl [("/*test 003*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta e) ++ ") <= " ++ show epsilon ++ ";\n*/")]
     inputs <- mkInputs meta (c2Args e)
     let e' = c2sExpr inputs e
     W.SymWordInst <- return (W.symWordInst t)
@@ -133,18 +136,18 @@ mkArgCall meta fnCallName C.UExpr { C.uExprExpr = e
 getExtArrs :: MetaTable -> [SBVFunc]
 getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
   = map mkIdx (M.toList arrs)
-  
+
   where
   mkIdx :: (Int, C.ExtArray) -> SBVFunc
   mkIdx (_, C.ExtArray { C.externArrayName    = name
                        , C.externArrayIdx     = idx
                        , C.externArrayIdxType = t    })
-    = 
+    =
     mkSBVFunc (mkExtArrFn name) mkSBVExpr
     where
     mkSBVExpr :: S.SBVCodeGen ()
     mkSBVExpr = do
-      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\result == " ++ (PJ.render $ ppExpr meta idx) ++ ";\n*/")]
+      S.cgAddDecl [("/*test 002*/\n/*DotBegin\n" ++ (PD.prettyPrintExprDot False idx) ++ "\nDotEnd*/\n/*@\n assigns \\nothing;\n ensures \\abs(\\result - " ++ (PJ.render $ ppExpr meta idx) ++ ") <= " ++ show epsilon ++ ";\n*/")]
       inputs <- mkInputs meta (c2Args idx)
       W.SymWordInst <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
@@ -157,13 +160,13 @@ getExtArrs meta@(MetaTable { externArrInfoMap = arrs })
 getExtFuns :: MetaTable -> [SBVFunc]
 getExtFuns meta@(MetaTable { externFunInfoMap = exts })
   = concatMap mkExtF (M.toList exts)
-  
+
   where
   mkExtF :: (Int, C.ExtFun) -> [SBVFunc]
   mkExtF (_, C.ExtFun { C.externFunName = name
                       , C.externFunTag  = tag
                       , C.externFunArgs = args })
-    = 
+    =
     map go (mkArgIdx args)
     where
     go (i,e) = mkArgCall meta (mkExtFunArgFn i name tag) e
@@ -179,42 +182,42 @@ getExtFuns meta@(MetaTable { externFunInfoMap = exts })
 -- (argToCall from MetaTable.hs).
 
 mkInputs :: MetaTable -> [Arg] -> S.SBVCodeGen Inputs
-mkInputs meta args = 
-  foldM argToInput (Inputs [] [] [] []) args 
+mkInputs meta args =
+  foldM argToInput (Inputs [] [] [] []) args
 
   where
   argToInput :: Inputs -> Arg -> S.SBVCodeGen Inputs
 
   -----------------------------------------
- 
+
   -- External variables
-  argToInput acc (Extern name) = 
+  argToInput acc (Extern name) =
     let extInfos = externVarInfoMap meta in
     let Just extInfo = M.lookup (name) extInfos in
     mkExtInput extInfo
 
-    where 
+    where
     mkExtInput :: C.ExtVar -> S.SBVCodeGen Inputs
     mkExtInput (C.ExtVar _ C.UType { C.uTypeType = t }) = do
       ext <- mkExtInput_ t (mkExtTmpVar name)
-      return acc { extVars = (name, (ExtInput { extInput = ext 
+      return acc { extVars = (name, (ExtInput { extInput = ext
                                               , extType  = t })
                              ) : extVars acc }
 
   -----------------------------------------
 
   -- External arrays
-  argToInput acc (ExternArr name tag) = 
+  argToInput acc (ExternArr name tag) =
     let extInfos = externArrInfoMap meta in
     let Just extInfo = M.lookup tag extInfos in
     mkExtInput extInfo
 
-    where 
+    where
     mkExtInput :: C.ExtArray -> S.SBVCodeGen Inputs
     mkExtInput C.ExtArray { C.externArrayElemType = t }
       = do
       v <- mkExtInput_ t (mkExtTmpTag name (Just tag))
-      return acc { extArrs = ((mkExtTmpTag name (Just tag)), ExtInput 
+      return acc { extArrs = ((mkExtTmpTag name (Just tag)), ExtInput
                                       { extInput  = v
                                       , extType   = t }
                              ) : extArrs acc }
@@ -222,7 +225,7 @@ mkInputs meta args =
   -----------------------------------------
 
   -- External functions
-  argToInput acc (ExternFun name tag) =
+  argToInput acc (T.ExternFun name tag) =
     let extInfos = externFunInfoMap meta in
     let Just extInfo = M.lookup tag extInfos in
     mkExtInput extInfo
@@ -232,7 +235,7 @@ mkInputs meta args =
     mkExtInput C.ExtFun { C.externFunType = t }
       = do
       v <- mkExtInput_ t (mkExtTmpTag name (Just tag))
-      return acc { extFuns = ((mkExtTmpTag name (Just tag)), ExtInput 
+      return acc { extFuns = ((mkExtTmpTag name (Just tag)), ExtInput
                                       { extInput = v
                                       , extType  = t }
                              ) : extFuns acc }
@@ -257,7 +260,7 @@ mkInputs meta args =
                                                     , arrType = t })
                              ) : extQues acc
                  }
-                   
+
     mkQueInput_ :: C.Type a -> [a] -> S.SBVCodeGen [S.SBV a]
     mkQueInput_ t que = do
       W.SymWordInst        <- return (W.symWordInst t)
