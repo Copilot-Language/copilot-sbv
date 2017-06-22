@@ -117,7 +117,7 @@ driver params meta (C.Spec streams observers _ _) dir fileName = do
   testFn :: Doc
   testFn =
     mkFunc (withPrefix (prefix params) "testing")
-           (   text "for(;;) step()"<> semi
+           (   text "for(;;)" <> (text (withPrefix (prefix params)  "step()")) <> semi
            )
 
   copilot = vcat $ intersperse (text "")

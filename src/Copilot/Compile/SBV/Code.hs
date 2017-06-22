@@ -26,7 +26,8 @@ import qualified Text.PrettyPrint.HughesPJ as PJ
 import Copilot.Core as C
 import Copilot.Core.Type.Equality ((=~=), coerce, cong)
 
-import qualified Data.SBV as S
+import qualified Data.SBV  as V
+import qualified Data.SBV.Tools.CodeGen as S
 
 import qualified Data.Map as M
 import Control.Monad (foldM)
@@ -61,7 +62,7 @@ updateStates meta (C.Spec streams _ _ _) =
         let Just strmInfo = M.lookup id (streamInfoMap meta)
         updateStreamState1 t1 e' strmInfo
 
-  updateStreamState1 :: C.Type a -> S.SBV a -> C.Stream -> S.SBVCodeGen ()
+  updateStreamState1 :: C.Type a -> V.SBV a -> C.Stream -> S.SBVCodeGen ()
   updateStreamState1 t1 e1 C.Stream { C.streamExprType = t2 }
     = do
     W.SymWordInst <- return (W.symWordInst t2)
@@ -261,7 +262,7 @@ mkInputs meta args =
                              ) : extQues acc
                  }
 
-    mkQueInput_ :: C.Type a -> [a] -> S.SBVCodeGen [S.SBV a]
+    mkQueInput_ :: C.Type a -> [a] -> S.SBVCodeGen [V.SBV a]
     mkQueInput_ t que = do
       W.SymWordInst        <- return (W.symWordInst t)
       W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)
@@ -270,7 +271,7 @@ mkInputs meta args =
 
 -----------------------------------------
 
-mkExtInput_ :: C.Type a -> String -> S.SBVCodeGen (S.SBV a)
+mkExtInput_ :: C.Type a -> String -> S.SBVCodeGen (V.SBV a)
 mkExtInput_ t name = do
   W.SymWordInst        <- return (W.symWordInst t)
   W.HasSignAndSizeInst <- return (W.hasSignAndSizeInst t)

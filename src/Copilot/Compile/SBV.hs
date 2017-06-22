@@ -15,7 +15,7 @@ import qualified Copilot.Core.PrettyPrint as C
 import qualified Copilot.Core.PrettyDot as C
 import Copilot.Compile.Header.C99 (c99HeaderName, genC99Header)
 
-import qualified Data.SBV as S
+import qualified Data.SBV.Tools.CodeGen as S
 
 import Copilot.Compile.SBV.Driver (driver, driverName)
 import Copilot.Compile.SBV.Makefile (makefile, makefileName)
